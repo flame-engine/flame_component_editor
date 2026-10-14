@@ -23,6 +23,7 @@ jobs:
         **/*.md
         **/*.dart
       modified_files_only: false
+      runs_on: ubuntu-24.04
 
   build:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
@@ -30,3 +31,4 @@ jobs:
       flutter_channel: stable
       min_coverage: 50
       run_bloc_lint: false
+      runs_on: ubuntu-24.04
