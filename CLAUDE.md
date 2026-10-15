@@ -51,11 +51,13 @@ three pass.
 
 ## Current state
 
-- Scaffolding only: `lib/app/` contains the root `App` widget with a
-  placeholder home. No features, blocs or packages exist yet.
-- `bloc`, `flutter_bloc`, `equatable`, `flame`, `bloc_test` and `mocktail` are
-  **not yet** dependencies — add them (`flutter pub add ...`) when the first
-  feature needs them.
+- Features: `home` (open project + recent projects) and `project`
+  (placeholder). Packages: `key_value_storage_client`, `file_system_client`,
+  `project_repository` — see "Existing modules" in
+  [docs/architecture.md](docs/architecture.md).
+- `bloc`, `flutter_bloc`, `equatable`, `bloc_test`, `mocktail` and `bloc_lint`
+  are dependencies; `flame` is **not yet** — add it when the editor canvas
+  needs it.
 - Toolchain: Flutter stable 3.47 / Dart 3.13. Dart 3.13 lints prefer the
   `new` constructor syntax (`const new({super.key});`) — `dart fix --apply`
   handles it.

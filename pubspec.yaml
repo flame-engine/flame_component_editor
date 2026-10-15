@@ -7,12 +7,24 @@ environment:
   sdk: ^3.13.4
 
 dependencies:
+  bloc: ^9.2.1
+  equatable: ^3.0.0
+  file_system_client:
+    path: packages/file_system_client
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
+  key_value_storage_client:
+    path: packages/key_value_storage_client
+  project_repository:
+    path: packages/project_repository
 
 dev_dependencies:
+  bloc_lint: ^0.4.3
+  bloc_test: ^10.0.0
   flutter_test:
     sdk: flutter
+  mocktail: ^1.0.5
   very_good_analysis: ^11.0.0
 
 flutter:
