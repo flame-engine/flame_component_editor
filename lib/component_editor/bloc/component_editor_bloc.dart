@@ -182,7 +182,7 @@ class ComponentEditorBloc
     ComponentEditorSaveRequested event,
     Emitter<ComponentEditorState> emit,
   ) async {
-    if (!state.hasChanges) return;
+    if (!state.canSave) return;
     final component = state.component;
     emit(state.copyWith(status: ComponentEditorStatus.saving));
     try {
@@ -192,8 +192,9 @@ class ComponentEditorBloc
       return;
     }
 
-    // The component is saved even if its code can't be generated.
-    var saved = state.copyWith(savedComponent: component);
+    // The component is saved even if its code can't be generated; it can
+    // then be saved again, without changes, to generate the code.
+    var saved = state.copyWith(savedComponent: component, isCodeOutdated: true);
     try {
       // Names are validated as they are typed, but the other components
       // may not have been loaded yet, or may have clashed already. Code
@@ -211,7 +212,12 @@ class ComponentEditorBloc
         settings.outputPath,
         component,
       );
-      emit(saved.copyWith(status: ComponentEditorStatus.saved));
+      emit(
+        saved.copyWith(
+          status: ComponentEditorStatus.saved,
+          isCodeOutdated: false,
+        ),
+      );
     } on GeneratedFileConflictException {
       emit(saved.copyWith(status: ComponentEditorStatus.codeConflict));
     } on Exception {

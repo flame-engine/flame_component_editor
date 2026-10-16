@@ -342,6 +342,7 @@ void main() {
               status: status,
               component: edited,
               savedComponent: edited,
+              isCodeOutdated: true,
             ),
           ],
         );
@@ -380,6 +381,8 @@ void main() {
                 ComponentEditorStatus.classConflict,
               )
               .having((s) => s.hasChanges, 'hasChanges', isFalse)
+              .having((s) => s.isCodeOutdated, 'isCodeOutdated', isTrue)
+              .having((s) => s.canSave, 'canSave', isTrue)
               .having((s) => s.conflictingClassNames, 'conflictingClassNames', {
                 r'$PlayerHead',
               }),
@@ -412,6 +415,49 @@ void main() {
             savedComponent: component,
           ),
         ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'saves again without changes to generate outdated code',
+        setUp: () {
+          stubSave();
+          stubCode((_) async {});
+        },
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          status: ComponentEditorStatus.classConflict,
+          component: edited,
+          savedComponent: edited,
+          isCodeOutdated: true,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorSaveRequested()),
+        skip: 1,
+        expect: () => const [
+          ComponentEditorState(
+            status: ComponentEditorStatus.saved,
+            component: edited,
+            savedComponent: edited,
+          ),
+        ],
+        verify: (_) => verify(
+          () => componentRepository.writeComponentCode(
+            project.path,
+            'lib/game',
+            edited,
+          ),
+        ).called(1),
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'does nothing while saving',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          status: ComponentEditorStatus.saving,
+          component: edited,
+          savedComponent: component,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorSaveRequested()),
+        expect: () => const <ComponentEditorState>[],
       );
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(

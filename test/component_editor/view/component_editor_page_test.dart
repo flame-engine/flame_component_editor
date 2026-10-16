@@ -270,6 +270,25 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Player'), findsOneWidget);
     });
 
+    testWidgets('saves without changes when the code is outdated', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(
+        const ComponentEditorState(
+          status: ComponentEditorStatus.classConflict,
+          component: component,
+          savedComponent: component,
+          isCodeOutdated: true,
+        ),
+      );
+      await tester.pumpApp(buildSubject());
+
+      expect(find.text('Player •'), findsNothing);
+      await tester.tap(find.byTooltip('Save'));
+
+      verify(() => bloc.add(const ComponentEditorSaveRequested())).called(1);
+    });
+
     group('with changes', () {
       setUp(() {
         when(() => bloc.state).thenReturn(

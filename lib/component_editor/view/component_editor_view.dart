@@ -148,9 +148,7 @@ class _SaveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canSave = context.select<ComponentEditorBloc, bool>(
-      (bloc) =>
-          bloc.state.hasChanges &&
-          bloc.state.status != ComponentEditorStatus.saving,
+      (bloc) => bloc.state.canSave,
     );
     return IconButton(
       tooltip: 'Save',

@@ -45,6 +45,7 @@ final class ComponentEditorState extends Equatable {
     this.status = ComponentEditorStatus.ready,
     this.selectedPath = const [],
     this.takenClassNames = const {},
+    this.isCodeOutdated = false,
   });
 
   /// The current status.
@@ -64,6 +65,20 @@ final class ComponentEditorState extends Equatable {
   /// the children of [component] must not generate again (see
   /// [ComponentTree.generatedClassNames]).
   final Set<String> takenClassNames;
+
+  /// Whether the last save stored [savedComponent] but didn't generate its
+  /// code (see [ComponentEditorStatus.codeConflict],
+  /// [ComponentEditorStatus.classConflict] and
+  /// [ComponentEditorStatus.codeFailure]).
+  ///
+  /// The component can then be saved again without changes, to generate
+  /// the code once whatever was in the way is fixed outside the editor.
+  final bool isCodeOutdated;
+
+  /// Whether the component can be saved: it has changes or its code is
+  /// outdated, and it is not being saved already.
+  bool get canSave =>
+      (hasChanges || isCodeOutdated) && status != ComponentEditorStatus.saving;
 
   /// The classes of [component] that are generated for other components
   /// too, see [takenClassNames].
@@ -86,6 +101,7 @@ final class ComponentEditorState extends Equatable {
     Component? savedComponent,
     List<int>? selectedPath,
     Set<String>? takenClassNames,
+    bool? isCodeOutdated,
   }) {
     return ComponentEditorState(
       status: status ?? this.status,
@@ -93,6 +109,7 @@ final class ComponentEditorState extends Equatable {
       savedComponent: savedComponent ?? this.savedComponent,
       selectedPath: selectedPath ?? this.selectedPath,
       takenClassNames: takenClassNames ?? this.takenClassNames,
+      isCodeOutdated: isCodeOutdated ?? this.isCodeOutdated,
     );
   }
 
@@ -103,5 +120,6 @@ final class ComponentEditorState extends Equatable {
     savedComponent,
     selectedPath,
     takenClassNames,
+    isCodeOutdated,
   ];
 }

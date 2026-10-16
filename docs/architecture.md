@@ -266,6 +266,12 @@ existed): on a clash the JSON is saved but the code is not generated
 (`classConflict` status, the snackbar lists
 `ComponentEditorState.conflictingClassNames`).
 
+Whenever a save stores the JSON but not the code (`codeConflict`,
+`classConflict`, `codeFailure`), the state keeps `isCodeOutdated` until the
+code is generated, and `canSave` lets the user save again without changes
+(e.g. after renaming the *other* component, or moving a hand-written file
+out of the way).
+
 ## Domain sketch (expected, not yet built)
 
 These are **likely** candidates as the editor grows; confirm with the user
