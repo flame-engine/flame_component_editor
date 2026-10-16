@@ -247,6 +247,20 @@ normalization. Root names are validated on creation: the class name must
 be a valid identifier, and no other component may generate the same file.
 Thanks to the `$` prefix, generated classes never shadow Flame types.
 
+Generated classes are public, so **class names must also be unique across
+the project** (a library importing two files that declare `$PlayerShipHead`
+won't compile). `ComponentTree.generatedClassNames` lists the classes a
+component reserves: its root class and `$<Root><Child>` for **every** child,
+even leaves (which only get a class once they have children), so adding a
+grandchild never causes a clash. The class names live in `dart_names.dart`
+(`dartRootClassName`, `dartChildClassName`), shared by the generator and
+the validation. `createComponent` throws `ComponentClassConflictException`
+when the new root class is reserved by another component (e.g. `AB` vs
+`a_b`, or `player_ship_head` vs the `head` child of `player_ship`). The
+editor loads the other components' classes on `ComponentEditorStarted`
+(`ComponentEditorState.takenClassNames`), and both `validateChildName`
+(`ChildNameError.conflict`) and `uniqueChildName` take them into account.
+
 ## Domain sketch (expected, not yet built)
 
 These are **likely** candidates as the editor grows; confirm with the user

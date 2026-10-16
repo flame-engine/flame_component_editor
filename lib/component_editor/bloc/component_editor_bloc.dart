@@ -29,6 +29,7 @@ class ComponentEditorBloc
   }) : super(
          ComponentEditorState(component: component, savedComponent: component),
        ) {
+    on<ComponentEditorStarted>(_onStarted);
     on<ComponentEditorNodeSelected>(_onNodeSelected);
     on<ComponentEditorChildAdded>(_onChildAdded);
     on<ComponentEditorNodeRemoved>(_onNodeRemoved);
@@ -42,6 +43,28 @@ class ComponentEditorBloc
   final Project _project;
   final ComponentRepository _componentRepository;
   final ProjectRepository _projectRepository;
+
+  Future<void> _onStarted(
+    ComponentEditorStarted event,
+    Emitter<ComponentEditorState> emit,
+  ) async {
+    final List<Component> components;
+    try {
+      components = await _componentRepository.getComponents(_project.path);
+    } on Exception {
+      // Names are still validated inside the tree.
+      return;
+    }
+    final name = state.component.name;
+    emit(
+      state.copyWith(
+        takenClassNames: {
+          for (final other in components)
+            if (other.name != name) ...other.generatedClassNames,
+        },
+      ),
+    );
+  }
 
   void _onNodeSelected(
     ComponentEditorNodeSelected event,
@@ -58,7 +81,10 @@ class ComponentEditorBloc
     final component = state.component;
     final parentPath = state.selectedPath;
     final child = Component.create(
-      component.uniqueChildName(event.type),
+      component.uniqueChildName(
+        event.type,
+        takenClassNames: state.takenClassNames,
+      ),
       event.type,
     );
     emit(
@@ -94,7 +120,12 @@ class ComponentEditorBloc
   ) {
     final path = state.selectedPath;
     if (path.isEmpty) return;
-    if (state.component.validateChildName(path, event.name) != null) return;
+    final error = state.component.validateChildName(
+      path,
+      event.name,
+      takenClassNames: state.takenClassNames,
+    );
+    if (error != null) return;
     _editSelected(emit, (node) => node.copyWithName(event.name));
   }
 

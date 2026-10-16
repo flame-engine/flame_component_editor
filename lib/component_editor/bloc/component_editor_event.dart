@@ -8,6 +8,13 @@ sealed class ComponentEditorEvent extends Equatable {
   List<Object> get props => [];
 }
 
+/// The editor opened: the other components of the project should be
+/// loaded, so the names of children can be checked against their classes.
+final class ComponentEditorStarted extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorStarted] event.
+  const new();
+}
+
 /// The user selected the node at [path] in the component tree.
 final class ComponentEditorNodeSelected extends ComponentEditorEvent {
   /// Creates a [ComponentEditorNodeSelected] event.

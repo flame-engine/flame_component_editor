@@ -36,6 +36,7 @@ final class ComponentEditorState extends Equatable {
     required this.savedComponent,
     this.status = ComponentEditorStatus.ready,
     this.selectedPath = const [],
+    this.takenClassNames = const {},
   });
 
   /// The current status.
@@ -50,6 +51,11 @@ final class ComponentEditorState extends Equatable {
   /// The path of the selected node of the [component] tree, see
   /// [ComponentTree]. The root, the empty path, is selected by default.
   final List<int> selectedPath;
+
+  /// The classes generated for the other components of the project, which
+  /// the children of [component] must not generate again (see
+  /// [ComponentTree.generatedClassNames]).
+  final Set<String> takenClassNames;
 
   /// The selected node of the [component] tree.
   Component get selectedNode => component.nodeAt(selectedPath);
@@ -66,15 +72,23 @@ final class ComponentEditorState extends Equatable {
     Component? component,
     Component? savedComponent,
     List<int>? selectedPath,
+    Set<String>? takenClassNames,
   }) {
     return ComponentEditorState(
       status: status ?? this.status,
       component: component ?? this.component,
       savedComponent: savedComponent ?? this.savedComponent,
       selectedPath: selectedPath ?? this.selectedPath,
+      takenClassNames: takenClassNames ?? this.takenClassNames,
     );
   }
 
   @override
-  List<Object> get props => [status, component, savedComponent, selectedPath];
+  List<Object> get props => [
+    status,
+    component,
+    savedComponent,
+    selectedPath,
+    takenClassNames,
+  ];
 }

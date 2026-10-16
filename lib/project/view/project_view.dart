@@ -35,6 +35,12 @@ class ProjectView extends StatelessWidget {
             );
           case ProjectStatus.alreadyExists:
             _showMessage(context, 'A component with that name already exists');
+          case ProjectStatus.classConflict:
+            _showMessage(
+              context,
+              'That name generates the same class as a part of the '
+              '"${state.conflictingComponent}" component',
+            );
           case ProjectStatus.failure:
             _showMessage(context, 'Something went wrong');
           case ProjectStatus.initial ||

@@ -14,6 +14,11 @@ enum ChildNameError {
 
   /// Another component of the tree already uses the name.
   duplicate,
+
+  /// The class generated for the child would have the same name as a class
+  /// generated for another component of the project, see
+  /// [ComponentTree.generatedClassNames].
+  conflict,
 }
 
 /// Navigates and edits the tree formed by a [Component] and its children.
@@ -88,12 +93,34 @@ extension ComponentTree on Component {
     }
   }
 
+  /// The names of the classes this component reserves in the generated
+  /// code: the class of the root, and the class of every child.
+  ///
+  /// Only children that have children of their own get a class, but every
+  /// child reserves one, so adding children to a node never makes its class
+  /// clash with the classes of another component. Generated classes are
+  /// public, so the classes of two components of a project must not share
+  /// names, or a library importing both wouldn't compile.
+  Set<String> get generatedClassNames {
+    return {
+      dartRootClassName(name),
+      for (final node in nodes.skip(1)) dartChildClassName(name, node.name),
+    };
+  }
+
   /// Returns a name for a new [type] node that no node of the tree uses
-  /// yet, such as `rectangle1`.
-  String uniqueChildName(ComponentType type) {
+  /// yet, such as `rectangle1`, and whose class is not one of
+  /// [takenClassNames] (see [generatedClassNames]).
+  String uniqueChildName(
+    ComponentType type, {
+    Set<String> takenClassNames = const {},
+  }) {
     final names = {for (final node in nodes) dartMemberName(node.name)};
     var index = 1;
-    while (names.contains('${type.key}$index')) {
+    while (names.contains('${type.key}$index') ||
+        takenClassNames.contains(
+          dartChildClassName(name, '${type.key}$index'),
+        )) {
       index++;
     }
     return '${type.key}$index';
@@ -105,9 +132,15 @@ extension ComponentTree on Component {
   /// The name of a child becomes the name of its getter in the generated
   /// code, so it must be a valid getter of its parent and unique in the
   /// tree, ignoring the differences the generated code ignores (`left_arm`
-  /// and `leftArm` are the same name). The root (the empty [path]) is not a
-  /// child and can't be validated.
-  ChildNameError? validateChildName(List<int> path, String name) {
+  /// and `leftArm` are the same name). Its class must not be one of
+  /// [takenClassNames], the [generatedClassNames] of the other components
+  /// of the project. The root (the empty [path]) is not a child and can't
+  /// be validated.
+  ChildNameError? validateChildName(
+    List<int> path,
+    String name, {
+    Set<String> takenClassNames = const {},
+  }) {
     if (path.isEmpty) {
       throw ArgumentError.value(path, 'path', 'The root is not a child');
     }
@@ -122,7 +155,9 @@ extension ComponentTree on Component {
       return ChildNameError.reserved;
     }
     final taken = _getterNames(const [], except: path);
-    return taken.contains(getter) ? ChildNameError.duplicate : null;
+    if (taken.contains(getter)) return ChildNameError.duplicate;
+    final className = dartChildClassName(this.name, name);
+    return takenClassNames.contains(className) ? ChildNameError.conflict : null;
   }
 
   /// The getter names of this node, at [path], and its descendants, except

@@ -14,6 +14,8 @@ import 'package:project_repository/project_repository.dart';
 
 import '../../helpers/helpers.dart';
 
+class _MockComponentRepository extends Mock implements ComponentRepository;
+
 class _MockComponentEditorBloc
     extends MockBloc<ComponentEditorEvent, ComponentEditorState>
     implements ComponentEditorBloc;
@@ -30,7 +32,11 @@ void main() {
 
   group(ComponentEditorPage, () {
     testWidgets('route shows the editor for the component', (tester) async {
+      final componentRepository = _MockComponentRepository();
+      when(() => componentRepository.getComponents(project.path))
+          .thenAnswer((_) async => const [component]);
       await tester.pumpApp(
+        componentRepository: componentRepository,
         Builder(
           builder: (context) => TextButton(
             onPressed: () =>
@@ -46,6 +52,7 @@ void main() {
 
       expect(find.byType(ComponentEditorView), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Player'), findsOneWidget);
+      verify(() => componentRepository.getComponents(project.path)).called(1);
     });
   });
 
@@ -114,6 +121,7 @@ void main() {
             component: tree,
             savedComponent: tree,
             selectedPath: selectedPath,
+            takenClassNames: const {r'$PlayerEye'},
           ),
         );
       }
@@ -218,6 +226,7 @@ void main() {
         ('1head', 'Use a valid Dart identifier'),
         ('size', 'Already a member of the parent component in Flame'),
         ('Player', 'Another component already uses this name'),
+        ('eye', 'Generates the same class as a part of another component'),
       ]) {
         testWidgets('rejects the child name "$name"', (tester) async {
           stubTree(selectedPath: [0]);

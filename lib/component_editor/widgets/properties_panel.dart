@@ -37,7 +37,11 @@ class PropertiesPanel extends StatelessWidget {
               NameField(
                 value: component.name,
                 validator: (name) => _nameError(
-                  bloc.state.component.validateChildName(selectedPath, name),
+                  bloc.state.component.validateChildName(
+                    selectedPath,
+                    name,
+                    takenClassNames: bloc.state.takenClassNames,
+                  ),
                 ),
                 onChanged: (name) => bloc.add(ComponentEditorNameChanged(name)),
               ),
@@ -72,6 +76,9 @@ class PropertiesPanel extends StatelessWidget {
       ChildNameError.reserved =>
         'Already a member of the parent component in Flame',
       ChildNameError.duplicate => 'Another component already uses this name',
+      ChildNameError.conflict =>
+        'Generates the same class as a part of another component of the '
+            'project',
     };
   }
 }

@@ -62,6 +62,8 @@ void main() {
       test('writes the component file and returns the component', () async {
         when(() => fileSystem.listFiles(directory, extension: '.json'))
             .thenAnswer((_) async => [fileOf('Enemy')]);
+        when(() => fileSystem.readFile(fileOf('Enemy')))
+            .thenAnswer((_) async => jsonEncode({'name': 'Enemy'}));
         when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
 
         expect(
@@ -118,6 +120,43 @@ void main() {
         });
       }
     });
+
+    for (final (name, existing) in [
+      ('AB', const RectangleComponent(name: 'a_b')),
+      (
+        'player_ship_head',
+        const RectangleComponent(
+          name: 'player_ship',
+          children: [RectangleComponent(name: 'head')],
+        ),
+      ),
+    ]) {
+      test('createComponent throws ComponentClassConflictException for '
+          '"$name" when ${existing.name} generates its class', () async {
+        when(() => fileSystem.listFiles(directory, extension: '.json'))
+            .thenAnswer((_) async => [fileOf(existing.name)]);
+        when(() => fileSystem.readFile(fileOf(existing.name)))
+            .thenAnswer((_) async => jsonEncode(existing.toJson()));
+
+        await expectLater(
+          repository.createComponent(
+            projectPath,
+            name,
+            ComponentType.rectangle,
+          ),
+          throwsA(
+            isA<ComponentClassConflictException>()
+                .having((e) => e.name, 'name', name)
+                .having(
+                  (e) => e.conflictingComponent,
+                  'conflictingComponent',
+                  existing.name,
+                ),
+          ),
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+    }
 
     group('saveComponent', () {
       test('writes the component file', () async {

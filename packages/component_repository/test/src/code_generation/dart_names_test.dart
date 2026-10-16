@@ -14,6 +14,15 @@ void main() {
     });
   });
 
+  test('dartRootClassName adds the generated code prefix', () {
+    expect(dartRootClassName('player_ship'), equals(r'$PlayerShip'));
+  });
+
+  test('dartChildClassName prefixes the child with the root class', () {
+    expect(dartChildClassName('player_ship', 'head'), r'$PlayerShipHead');
+    expect(dartChildClassName('player', 'ship_head'), r'$PlayerShipHead');
+  });
+
   group('dartMemberName', () {
     test('converts names to camelCase', () {
       expect(dartMemberName('head'), equals('head'));

@@ -77,6 +77,43 @@ void main() {
       ],
     );
 
+    group(ComponentEditorStarted, () {
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'loads the classes of the other components',
+        setUp: () =>
+            when(() => componentRepository.getComponents(project.path))
+                .thenAnswer(
+                  (_) async => const [
+                    RectangleComponent(name: 'Enemy'),
+                    component,
+                    RectangleComponent(
+                      name: 'Ship',
+                      children: [RectangleComponent(name: 'wing')],
+                    ),
+                  ],
+                ),
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        expect: () => const [
+          ComponentEditorState(
+            component: component,
+            savedComponent: component,
+            takenClassNames: {r'$Enemy', r'$Ship', r'$ShipWing'},
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'emits nothing when the components cannot be loaded',
+        setUp: () =>
+            when(() => componentRepository.getComponents(project.path))
+                .thenThrow(Exception()),
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        expect: () => const <ComponentEditorState>[],
+      );
+    });
+
     group('component tree', () {
       const child = RectangleComponent(name: 'rectangle1');
       const tree = RectangleComponent(name: 'Player', children: [child]);
@@ -134,6 +171,25 @@ void main() {
             ),
             savedComponent: tree,
             selectedPath: [0, 0],
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorChildAdded skips names whose class is taken',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          takenClassNames: {r'$PlayerRectangle1'},
+        ),
+        act: (bloc) =>
+            bloc.add(const ComponentEditorChildAdded(ComponentType.rectangle)),
+        expect: () => [
+          isA<ComponentEditorState>().having(
+            (s) => s.selectedNode.name,
+            'selectedNode.name',
+            'rectangle2',
           ),
         ],
       );
@@ -360,6 +416,19 @@ void main() {
           expect: () => const <ComponentEditorState>[],
         );
       }
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ignores a name whose class another component generates',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: named,
+          savedComponent: named,
+          selectedPath: [1],
+          takenClassNames: {r'$PlayerHead'},
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorNameChanged('head')),
+        expect: () => const <ComponentEditorState>[],
+      );
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'does not rename the root',

@@ -133,6 +133,36 @@ void main() {
       );
 
       blocTest<ProjectBloc, ProjectState>(
+        'emits classConflict when the class of the name is taken',
+        setUp: () =>
+            when(
+              () => componentRepository.createComponent(
+                project.path,
+                'player_ship_head',
+                ComponentType.rectangle,
+              ),
+            ).thenThrow(
+              const ComponentClassConflictException(
+                'player_ship_head',
+                'player_ship',
+              ),
+            ),
+        build: buildBloc,
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested(
+            'player_ship_head',
+            ComponentType.rectangle,
+          ),
+        ),
+        expect: () => const [
+          ProjectState(
+            status: ProjectStatus.classConflict,
+            conflictingComponent: 'player_ship',
+          ),
+        ],
+      );
+
+      blocTest<ProjectBloc, ProjectState>(
         'emits failure when creating fails',
         setUp: () => when(
           () => componentRepository.createComponent(
