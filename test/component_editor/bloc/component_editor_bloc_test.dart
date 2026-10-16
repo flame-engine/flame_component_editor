@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:component_repository/component_repository.dart';
 import 'package:flame_component_editor/component_editor/component_editor.dart';
@@ -180,6 +182,42 @@ void main() {
               .having((s) => s.canSave, 'canSave', isTrue),
         ],
       );
+
+      test('does not overwrite what a save found meanwhile', () async {
+        stubComponents(const []);
+        final isUpToDate = Completer<bool>();
+        when(
+          () => componentRepository.isComponentCodeUpToDate(
+            project.path,
+            'lib/game',
+            component,
+          ),
+        ).thenAnswer((_) => isUpToDate.future);
+        when(() => componentRepository.saveComponent(project.path, edited))
+            .thenAnswer((_) async {});
+        when(
+          () => componentRepository.writeComponentCode(
+            project.path,
+            'lib/game',
+            edited,
+          ),
+        ).thenAnswer((_) async {});
+
+        final bloc = buildBloc()..add(const ComponentEditorStarted());
+        await Future<void>.delayed(Duration.zero);
+        bloc
+          ..add(const ComponentEditorSizeChanged(size))
+          ..add(const ComponentEditorSaveRequested());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.status, ComponentEditorStatus.saved);
+
+        // The check was for the code of the component before the save.
+        isUpToDate.complete(false);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.isCodeOutdated, isFalse);
+        await bloc.close();
+      });
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'emits nothing when nothing can be loaded',
@@ -494,6 +532,60 @@ void main() {
         verify: (_) =>
             verifyNever(() => componentRepository.saveComponent(any(), any())),
       );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'edits made while saving keep saving, so no other save starts',
+        setUp: () {
+          stubSave();
+          stubCode((_) async {});
+        },
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: edited,
+          savedComponent: component,
+        ),
+        act: (bloc) => bloc
+          ..add(const ComponentEditorSaveRequested())
+          ..add(const ComponentEditorPaintChanged(paint))
+          ..add(const ComponentEditorSaveRequested()),
+        wait: Duration.zero,
+        verify: (bloc) {
+          verify(() => componentRepository.saveComponent(project.path, any()))
+              .called(1);
+          expect(bloc.state.status, ComponentEditorStatus.saved);
+          expect(bloc.state.hasChanges, isTrue);
+        },
+      );
+
+      test('goes back to ready when the clashing child is renamed while '
+          'loading', () async {
+        final components = Completer<List<Component>>();
+        when(() => componentRepository.getComponents(project.path))
+            .thenAnswer((_) => components.future);
+        const tree = RectangleComponent(
+          name: 'Player',
+          children: [RectangleComponent(name: 'head')],
+        );
+        final bloc = buildBloc()
+          ..emit(
+            const ComponentEditorState(
+              component: tree,
+              savedComponent: component,
+              selectedPath: [0],
+            ),
+          )
+          ..add(const ComponentEditorSaveRequested());
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const ComponentEditorNameChanged('eye'));
+        await Future<void>.delayed(Duration.zero);
+        components.complete(const [playerHead]);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.status, ComponentEditorStatus.ready);
+        expect(bloc.state.selectedNode.name, 'eye');
+        verifyNever(() => componentRepository.saveComponent(any(), any()));
+        await bloc.close();
+      });
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'keeps edits made while saving',

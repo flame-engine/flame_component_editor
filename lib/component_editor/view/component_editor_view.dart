@@ -141,15 +141,20 @@ class _UnsavedChangesGuard extends StatelessWidget {
       case UnsavedChangesDecision.discard:
         navigator.pop();
       case UnsavedChangesDecision.save:
+        // A save that finished while the dialog was open saved everything.
+        if (!bloc.state.hasChanges) return navigator.pop();
         bloc.add(const ComponentEditorSaveRequested());
+        // Edits keep the saving status, so the first other status is the
+        // result of the save (or of the one already running).
         final state = await bloc.stream.firstWhere(
-          (state) =>
-              state.status.isSaved ||
-              state.status == ComponentEditorStatus.failure ||
-              state.status == ComponentEditorStatus.classConflict,
+          (state) => state.status != ComponentEditorStatus.saving,
+          orElse: () => bloc.state,
         );
-        // When not saved the editor stays open and shows the error.
-        if (state.status.isSaved) navigator.pop();
+        // The editor was closed meanwhile.
+        if (bloc.isClosed) return;
+        // When not saved the editor stays open and shows the error. Edits
+        // made while saving keep it open too, so they are not lost.
+        if (state.status.isSaved && !state.hasChanges) navigator.pop();
     }
   }
 }

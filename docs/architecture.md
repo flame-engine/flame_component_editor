@@ -279,7 +279,10 @@ hand-written file), and saves that don't generate the code (`codeConflict`,
 `codeFailure`) set it. `canSave` then lets the user save without changes,
 e.g. after deleting the other component or moving a hand-written file out
 of the way. Save states are built from the current state, so edits made
-while saving are kept.
+while saving are kept; edits keep the `saving` status, so no second save
+starts meanwhile, and `ComponentEditorStarted` drops its results if a save
+started while it was loading (the save's are newer). The leave prompt's
+"save" only leaves once nothing is unsaved.
 
 ## Domain sketch (expected, not yet built)
 

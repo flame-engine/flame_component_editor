@@ -44,12 +44,30 @@ class ComponentEditorBloc
   final ComponentRepository _componentRepository;
   final ProjectRepository _projectRepository;
 
+  /// How many saves were requested, so slower work started before a save
+  /// doesn't overwrite what the save found.
+  int _saves = 0;
+
+  /// The status after an edit: edits are allowed while saving, but must not
+  /// end the save, or another save could run at the same time.
+  ComponentEditorStatus get _editedStatus =>
+      state.status == ComponentEditorStatus.saving
+      ? ComponentEditorStatus.saving
+      : ComponentEditorStatus.ready;
+
   Future<void> _onStarted(
     ComponentEditorStarted event,
     Emitter<ComponentEditorState> emit,
   ) async {
+    // A save that started meanwhile loads the same things again, and its
+    // results are newer.
+    final saves = _saves;
+    bool isSaving() =>
+        _saves != saves || state.status == ComponentEditorStatus.saving;
+
     try {
       final taken = await _loadTakenClassNames();
+      if (isSaving()) return;
       emit(state.copyWith(takenClassNames: taken));
       // Clashes from before names were checked across components.
       if (state.conflictingClassNames.isNotEmpty) {
@@ -67,6 +85,7 @@ class ComponentEditorBloc
         settings.outputPath,
         state.savedComponent,
       );
+      if (isSaving()) return;
       emit(state.copyWith(isCodeOutdated: !isUpToDate));
     } on Exception {
       // Saving still needs changes then.
@@ -108,7 +127,7 @@ class ComponentEditorBloc
     );
     emit(
       state.copyWith(
-        status: ComponentEditorStatus.ready,
+        status: _editedStatus,
         component: component.addChildAt(parentPath, child),
         selectedPath: [
           ...parentPath,
@@ -126,7 +145,7 @@ class ComponentEditorBloc
     if (path.isEmpty || !state.component.hasNodeAt(path)) return;
     emit(
       state.copyWith(
-        status: ComponentEditorStatus.ready,
+        status: _editedStatus,
         component: state.component.removeNodeAt(path),
         selectedPath: path.sublist(0, path.length - 1),
       ),
@@ -191,9 +210,7 @@ class ComponentEditorBloc
   ) {
     final component = state.component.updateNodeAt(state.selectedPath, edit);
     if (component == state.component) return;
-    emit(
-      state.copyWith(status: ComponentEditorStatus.ready, component: component),
-    );
+    emit(state.copyWith(status: _editedStatus, component: component));
   }
 
   Future<void> _onSaveRequested(
@@ -201,6 +218,7 @@ class ComponentEditorBloc
     Emitter<ComponentEditorState> emit,
   ) async {
     if (!state.canSave) return;
+    _saves++;
     final component = state.component;
     emit(state.copyWith(status: ComponentEditorStatus.saving));
 
@@ -216,11 +234,15 @@ class ComponentEditorBloc
       return;
     }
     if (component.generatedClassNames.any(taken.containsKey)) {
+      final conflict = state.copyWith(
+        status: ComponentEditorStatus.classConflict,
+        takenClassNames: taken,
+      );
+      // Clashing children may have been renamed while loading.
       emit(
-        state.copyWith(
-          status: ComponentEditorStatus.classConflict,
-          takenClassNames: taken,
-        ),
+        conflict.conflictingClassNames.isEmpty
+            ? conflict.copyWith(status: ComponentEditorStatus.ready)
+            : conflict,
       );
       return;
     }
@@ -228,7 +250,12 @@ class ComponentEditorBloc
     try {
       await _componentRepository.saveComponent(_project.path, component);
     } on Exception {
-      emit(state.copyWith(status: ComponentEditorStatus.failure));
+      emit(
+        state.copyWith(
+          status: ComponentEditorStatus.failure,
+          takenClassNames: taken,
+        ),
+      );
       return;
     }
 

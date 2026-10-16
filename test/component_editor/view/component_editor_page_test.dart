@@ -477,6 +477,7 @@ void main() {
       bloc = _MockComponentEditorBloc();
       states = StreamController.broadcast();
       whenListen(bloc, states.stream, initialState: unsaved);
+      when(() => bloc.isClosed).thenReturn(false);
     });
 
     tearDown(() => states.close());
@@ -591,6 +592,57 @@ void main() {
       await tester.pumpRouteTransition();
 
       expect(find.byType(ComponentEditorView), findsNothing);
+    });
+
+    testWidgets('leaves when a save finished while asking', (tester) async {
+      await openEditor(tester);
+      await leave(tester);
+
+      states.add(
+        const ComponentEditorState(
+          status: ComponentEditorStatus.saved,
+          component: edited,
+          savedComponent: edited,
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpRouteTransition();
+
+      expect(find.byType(ComponentEditorView), findsNothing);
+      verifyNever(() => bloc.add(const ComponentEditorSaveRequested()));
+    });
+
+    testWidgets('stays when the clash was fixed while saving', (tester) async {
+      await openEditor(tester);
+      await leave(tester);
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      states
+        ..add(unsaved.copyWith(status: ComponentEditorStatus.saving))
+        ..add(unsaved.copyWith(status: ComponentEditorStatus.ready));
+      await tester.pumpRouteTransition();
+
+      expect(find.byType(ComponentEditorView), findsOneWidget);
+    });
+
+    testWidgets('stays when edited while saving', (tester) async {
+      await openEditor(tester);
+      await leave(tester);
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      states.add(
+        const ComponentEditorState(
+          status: ComponentEditorStatus.saved,
+          component: component,
+          savedComponent: edited,
+        ),
+      );
+      await tester.pumpRouteTransition();
+
+      expect(find.byType(ComponentEditorView), findsOneWidget);
     });
 
     testWidgets('stays when the classes clash', (tester) async {
