@@ -254,6 +254,12 @@ void main() {
     });
 
     group(ComponentEditorSaveRequested, () {
+      setUp(
+        () =>
+            when(() => componentRepository.getComponents(project.path))
+                .thenAnswer((_) async => const [component]),
+      );
+
       void stubSave() {
         when(() => componentRepository.saveComponent(project.path, edited))
             .thenAnswer((_) async {});
@@ -340,6 +346,48 @@ void main() {
           ],
         );
       }
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'emits classConflict, with the changes saved, and does not generate '
+        'the code when another component generates one of its classes',
+        setUp: () {
+          when(() => componentRepository.saveComponent(project.path, any()))
+              .thenAnswer((_) async {});
+          when(() => componentRepository.getComponents(project.path))
+              .thenAnswer(
+                (_) async => const [
+                  component,
+                  RectangleComponent(name: 'player_head'),
+                ],
+              );
+        },
+        build: buildBloc,
+        // The other components were not loaded when the child was named.
+        seed: () => const ComponentEditorState(
+          component: RectangleComponent(
+            name: 'Player',
+            children: [RectangleComponent(name: 'head')],
+          ),
+          savedComponent: component,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorSaveRequested()),
+        skip: 1,
+        expect: () => [
+          isA<ComponentEditorState>()
+              .having(
+                (s) => s.status,
+                'status',
+                ComponentEditorStatus.classConflict,
+              )
+              .having((s) => s.hasChanges, 'hasChanges', isFalse)
+              .having((s) => s.conflictingClassNames, 'conflictingClassNames', {
+                r'$PlayerHead',
+              }),
+        ],
+        verify: (_) => verifyNever(
+          () => componentRepository.writeComponentCode(any(), any(), any()),
+        ),
+      );
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'emits failure when saving fails',

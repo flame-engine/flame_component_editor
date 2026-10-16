@@ -48,22 +48,23 @@ class ComponentEditorBloc
     ComponentEditorStarted event,
     Emitter<ComponentEditorState> emit,
   ) async {
-    final List<Component> components;
     try {
-      components = await _componentRepository.getComponents(_project.path);
+      emit(state.copyWith(takenClassNames: await _loadTakenClassNames()));
     } on Exception {
-      // Names are still validated inside the tree.
-      return;
+      // Names are still validated inside the tree, and against the other
+      // components when saving.
     }
+  }
+
+  /// The [ComponentTree.generatedClassNames] of the other components of
+  /// the project.
+  Future<Set<String>> _loadTakenClassNames() async {
+    final components = await _componentRepository.getComponents(_project.path);
     final name = state.component.name;
-    emit(
-      state.copyWith(
-        takenClassNames: {
-          for (final other in components)
-            if (other.name != name) ...other.generatedClassNames,
-        },
-      ),
-    );
+    return {
+      for (final other in components)
+        if (other.name != name) ...other.generatedClassNames,
+    };
   }
 
   void _onNodeSelected(
@@ -192,8 +193,18 @@ class ComponentEditorBloc
     }
 
     // The component is saved even if its code can't be generated.
-    final saved = state.copyWith(savedComponent: component);
+    var saved = state.copyWith(savedComponent: component);
     try {
+      // Names are validated as they are typed, but the other components
+      // may not have been loaded yet, or may have clashed already. Code
+      // with clashing classes wouldn't compile, so it is not generated.
+      final taken = await _loadTakenClassNames();
+      saved = saved.copyWith(takenClassNames: taken);
+      if (component.generatedClassNames.any(taken.contains)) {
+        emit(saved.copyWith(status: ComponentEditorStatus.classConflict));
+        return;
+      }
+
       final settings = await _projectRepository.getSettings(_project);
       await _componentRepository.writeComponentCode(
         _project.path,

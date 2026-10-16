@@ -260,6 +260,11 @@ when the new root class is reserved by another component (e.g. `AB` vs
 editor loads the other components' classes on `ComponentEditorStarted`
 (`ComponentEditorState.takenClassNames`), and both `validateChildName`
 (`ChildNameError.conflict`) and `uniqueChildName` take them into account.
+Saving reloads the other components and checks the whole tree again
+(catching names typed before they loaded, and clashes that already
+existed): on a clash the JSON is saved but the code is not generated
+(`classConflict` status, the snackbar lists
+`ComponentEditorState.conflictingClassNames`).
 
 ## Domain sketch (expected, not yet built)
 

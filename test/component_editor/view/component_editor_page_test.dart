@@ -328,6 +328,36 @@ void main() {
       expect(find.text('Could not save the component'), findsOneWidget);
     });
 
+    testWidgets('shows the clashing classes for classConflict', (tester) async {
+      const tree = RectangleComponent(
+        name: 'Player',
+        children: [RectangleComponent(name: 'head')],
+      );
+      whenListen(
+        bloc,
+        Stream.value(
+          const ComponentEditorState(
+            status: ComponentEditorStatus.classConflict,
+            component: tree,
+            savedComponent: tree,
+            takenClassNames: {r'$PlayerHead', r'$Enemy'},
+          ),
+        ),
+        initialState: const ComponentEditorState(
+          component: tree,
+          savedComponent: component,
+        ),
+      );
+
+      await tester.pumpApp(buildSubject());
+      await tester.pump();
+
+      expect(
+        find.textContaining(r'other components also generate $PlayerHead.'),
+        findsOneWidget,
+      );
+    });
+
     for (final (status, message) in [
       (ComponentEditorStatus.codeConflict, 'a file that was not generated'),
       (ComponentEditorStatus.codeFailure, 'the code could not be generated'),
