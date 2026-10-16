@@ -191,6 +191,46 @@ void main() {
         expect(find.byType(SizeEditor), findsOneWidget);
       });
 
+      testWidgets('hides the name of the root', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        expect(find.byType(NameField), findsNothing);
+      });
+
+      testWidgets('renames a selected child', (tester) async {
+        stubTree(selectedPath: [0]);
+        await tester.pumpApp(buildSubject());
+
+        final field = find.byType(NameField);
+        expect(
+          find.descendant(of: field, matching: find.text('rectangle1')),
+          findsOneWidget,
+        );
+
+        await tester.enterText(field, 'head');
+
+        verify(() => bloc.add(const ComponentEditorNameChanged('head')))
+            .called(1);
+      });
+
+      for (final (name, message) in [
+        ('1head', 'Use a valid Dart identifier'),
+        ('size', 'Already a member of the parent component in Flame'),
+        ('Player', 'Another component already uses this name'),
+      ]) {
+        testWidgets('rejects the child name "$name"', (tester) async {
+          stubTree(selectedPath: [0]);
+          await tester.pumpApp(buildSubject());
+
+          await tester.enterText(find.byType(NameField), name);
+          await tester.pump();
+
+          expect(find.textContaining(message), findsOneWidget);
+          verifyNever(() => bloc.add(ComponentEditorNameChanged(name)));
+        });
+      }
+
       testWidgets('edits the position of a selected child', (tester) async {
         stubTree(selectedPath: [0]);
         await tester.pumpApp(buildSubject());
@@ -278,6 +318,33 @@ void main() {
 
       expect(find.text('Could not save the component'), findsOneWidget);
     });
+
+    for (final (status, message) in [
+      (ComponentEditorStatus.codeConflict, 'a file that was not generated'),
+      (ComponentEditorStatus.codeFailure, 'the code could not be generated'),
+    ]) {
+      testWidgets('shows a message for $status', (tester) async {
+        whenListen(
+          bloc,
+          Stream.value(
+            ComponentEditorState(
+              status: status,
+              component: edited,
+              savedComponent: edited,
+            ),
+          ),
+          initialState: const ComponentEditorState(
+            component: edited,
+            savedComponent: component,
+          ),
+        );
+
+        await tester.pumpApp(buildSubject());
+        await tester.pump();
+
+        expect(find.textContaining(message), findsOneWidget);
+      });
+    }
   });
 
   group('leaving the editor', () {
@@ -380,6 +447,26 @@ void main() {
       states.add(
         const ComponentEditorState(
           status: ComponentEditorStatus.saved,
+          component: edited,
+          savedComponent: edited,
+        ),
+      );
+      await tester.pumpRouteTransition();
+
+      expect(find.byType(ComponentEditorView), findsNothing);
+    });
+
+    testWidgets('leaves when saved without generating the code', (
+      tester,
+    ) async {
+      await openEditor(tester);
+      await leave(tester);
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      states.add(
+        const ComponentEditorState(
+          status: ComponentEditorStatus.codeFailure,
           component: edited,
           savedComponent: edited,
         ),

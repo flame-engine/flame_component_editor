@@ -56,6 +56,9 @@ sealed class Component extends Equatable {
   /// The type of this component.
   ComponentType get type;
 
+  /// Returns a copy of this component called [name].
+  Component copyWithName(String name);
+
   /// Returns a copy of this component with [children] replaced.
   Component copyWithChildren(List<Component> children);
 

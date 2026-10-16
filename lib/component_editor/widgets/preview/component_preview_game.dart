@@ -26,26 +26,26 @@ class ComponentPreviewGame extends FlameGame {
   Color backgroundColor() => const Color(0xFF1E1E1E);
 
   @override
-  Future<void> onLoad() => _rebuild();
+  void onLoad() => _rebuild();
 
   /// Renders [component] instead of the current one.
   ///
   /// The existing Flame components are updated in place, unless components
   /// were added, removed or changed type (see [haveSameShape]).
-  Future<void> show(Component component) async {
+  void show(Component component) {
     final previous = _component;
     _component = component;
     if (!isLoaded) return;
     if (haveSameShape(previous, component)) {
       applyTree(_preview, component);
     } else {
-      await _rebuild();
+      _rebuild();
     }
   }
 
-  Future<void> _rebuild() async {
+  void _rebuild() {
     if (isLoaded) _preview.removeFromParent();
     _preview = buildFlameComponent(_component);
-    await world.add(_preview);
+    world.add(_preview);
   }
 }

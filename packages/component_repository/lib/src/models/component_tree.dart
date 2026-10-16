@@ -1,4 +1,20 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:component_repository/src/code_generation/dart_names.dart';
+
+/// Why a name can't be used for a child component, see
+/// [ComponentTree.validateChildName].
+enum ChildNameError {
+  /// The name is not a valid Dart identifier, or its getter would be a
+  /// Dart keyword.
+  invalid,
+
+  /// The getter of the child would clash with a member of its parent's
+  /// Flame class, such as `size` or `position`.
+  reserved,
+
+  /// Another component of the tree already uses the name.
+  duplicate,
+}
 
 /// Navigates and edits the tree formed by a [Component] and its children.
 ///
@@ -75,11 +91,57 @@ extension ComponentTree on Component {
   /// Returns a name for a new [type] node that no node of the tree uses
   /// yet, such as `rectangle1`.
   String uniqueChildName(ComponentType type) {
-    final names = {for (final node in nodes) node.name};
+    final names = {for (final node in nodes) dartMemberName(node.name)};
     var index = 1;
     while (names.contains('${type.key}$index')) {
       index++;
     }
     return '${type.key}$index';
+  }
+
+  /// Returns why the node at [path] can't be renamed to [name], or `null`
+  /// if it can.
+  ///
+  /// The name of a child becomes the name of its getter in the generated
+  /// code, so it must be a valid getter of its parent and unique in the
+  /// tree, ignoring the differences the generated code ignores (`left_arm`
+  /// and `leftArm` are the same name). The root (the empty [path]) is not a
+  /// child and can't be validated.
+  ChildNameError? validateChildName(List<int> path, String name) {
+    if (path.isEmpty) {
+      throw ArgumentError.value(path, 'path', 'The root is not a child');
+    }
+    final getter = dartMemberName(name);
+    if (!isDartIdentifier(name) ||
+        !isDartIdentifier(getter) ||
+        isDartKeyword(getter)) {
+      return ChildNameError.invalid;
+    }
+    final parent = nodeAt(path.sublist(0, path.length - 1));
+    if (flameMemberNames(parent.type).contains(getter)) {
+      return ChildNameError.reserved;
+    }
+    final taken = _getterNames(const [], except: path);
+    return taken.contains(getter) ? ChildNameError.duplicate : null;
+  }
+
+  /// The getter names of this node, at [path], and its descendants, except
+  /// the node at [except].
+  Iterable<String> _getterNames(
+    List<int> path, {
+    required List<int> except,
+  }) sync* {
+    if (!_samePath(path, except)) yield dartMemberName(name);
+    for (final (index, child) in children.indexed) {
+      yield* child._getterNames([...path, index], except: except);
+    }
+  }
+
+  static bool _samePath(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }

@@ -2,5 +2,6 @@
 /// components.
 library;
 
+export 'src/code_generation/code_generation.dart';
 export 'src/component_repository.dart';
 export 'src/models/models.dart';

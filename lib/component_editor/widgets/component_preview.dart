@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flame/game.dart';
 import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
 import 'package:flame_component_editor/component_editor/widgets/preview/preview.dart';
@@ -27,7 +25,7 @@ class _ComponentPreviewState extends State<ComponentPreview> {
     return BlocListener<ComponentEditorBloc, ComponentEditorState>(
       listenWhen: (previous, current) =>
           previous.component != current.component,
-      listener: (context, state) => unawaited(_game.show(state.component)),
+      listener: (context, state) => _game.show(state.component),
       // The preview takes no keyboard input; without this the game widget
       // would grab focus and swallow the editor shortcuts (e.g. Cmd+S).
       child: GameWidget(game: _game, autofocus: false),

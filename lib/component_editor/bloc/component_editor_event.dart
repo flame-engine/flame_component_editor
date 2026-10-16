@@ -46,6 +46,21 @@ final class ComponentEditorNodeRemoved extends ComponentEditorEvent {
   List<Object> get props => [path];
 }
 
+/// The user renamed the selected node.
+///
+/// The root can't be renamed, and names rejected by
+/// [ComponentTree.validateChildName] are ignored.
+final class ComponentEditorNameChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorNameChanged] event.
+  const new(this.name);
+
+  /// The new name.
+  final String name;
+
+  @override
+  List<Object> get props => [name];
+}
+
 /// The user edited the position of the selected [PositionedComponent].
 final class ComponentEditorPositionChanged extends ComponentEditorEvent {
   /// Creates a [ComponentEditorPositionChanged] event.
