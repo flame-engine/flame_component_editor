@@ -2,15 +2,48 @@ import 'package:component_repository/component_repository.dart';
 import 'package:flame/components.dart' as flame;
 import 'package:flutter/painting.dart';
 
-/// Builds the Flame component that previews [component].
+/// Builds the Flame component that previews the root [component], with its
+/// children.
 ///
-/// The component is anchored at its center and has every property of
-/// [component] applied with [applyProperties].
+/// The root is anchored at its center, so it is centered in the world.
+/// Children keep Flame's default top left anchor and are positioned
+/// relative to their parent, like in the generated code.
 flame.PositionComponent buildFlameComponent(Component component) {
-  final preview = switch (component) {
+  return _build(component)..anchor = flame.Anchor.center;
+}
+
+flame.PositionComponent _build(Component component) {
+  final target = switch (component) {
     RectangleComponent() => flame.RectangleComponent(),
   };
-  return applyProperties(preview..anchor = flame.Anchor.center, component);
+  applyProperties(target, component);
+  // Children added before mounting are stored right away, in order.
+  component.children.map(_build).forEach(target.add);
+  return target;
+}
+
+/// Whether [a] and [b] have the same types arranged in the same tree, so
+/// that the Flame components built for [a] can be updated to show [b].
+bool haveSameShape(Component a, Component b) {
+  if (a.type != b.type || a.children.length != b.children.length) {
+    return false;
+  }
+  for (var i = 0; i < a.children.length; i++) {
+    if (!haveSameShape(a.children[i], b.children[i])) return false;
+  }
+  return true;
+}
+
+/// Applies the properties of [component] and of all of its children to
+/// [target] and its children, which must have been built by
+/// [buildFlameComponent] for a component of the same shape (see
+/// [haveSameShape]).
+void applyTree(flame.PositionComponent target, Component component) {
+  applyProperties(target, component);
+  final children = target.children.whereType<flame.PositionComponent>();
+  for (final (index, child) in children.indexed) {
+    applyTree(child, component.children[index]);
+  }
 }
 
 /// Applies every property [component] has to [target].
@@ -21,6 +54,9 @@ T applyProperties<T extends flame.PositionComponent>(
   T target,
   Component component,
 ) {
+  if (component case final PositionedComponent positioned) {
+    applyPosition(target, positioned.position);
+  }
   if (component case final SizedComponent sized) {
     applySize(target, sized.size);
   }
@@ -29,6 +65,11 @@ T applyProperties<T extends flame.PositionComponent>(
     applyPaint(target as flame.HasPaint, painted.paint);
   }
   return target;
+}
+
+/// Applies [position] to [target].
+void applyPosition(flame.PositionComponent target, ComponentPosition position) {
+  target.position.setValues(position.x, position.y);
 }
 
 /// Applies [size] to [target].

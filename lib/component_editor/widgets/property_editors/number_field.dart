@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 /// {@template number_field}
-/// A text field that edits a non-negative number.
+/// A text field that edits a number, by default a non-negative one.
 ///
-/// The value is committed with [onChanged] when the field is submitted or
-/// loses focus. Invalid input is reverted to [value].
+/// Every valid edit is committed with [onChanged] as the user types.
+/// Invalid input, including numbers below [min], is not committed, and is
+/// reverted to the last valid value when the field is submitted or loses
+/// focus.
 /// {@endtemplate}
 class NumberField extends StatefulWidget {
   /// {@macro number_field}
@@ -12,6 +14,7 @@ class NumberField extends StatefulWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.min = 0,
     super.key,
   });
 
@@ -21,8 +24,11 @@ class NumberField extends StatefulWidget {
   /// The current value.
   final double value;
 
-  /// Called with the new value when the user commits a valid edit.
+  /// Called with the new value whenever the user types a valid number.
   final ValueChanged<double> onChanged;
+
+  /// The smallest accepted value, or `null` to accept any number.
+  final double? min;
 
   @override
   State<NumberField> createState() => _NumberFieldState();
@@ -31,18 +37,21 @@ class NumberField extends StatefulWidget {
 class _NumberFieldState extends State<NumberField> {
   late final _controller = TextEditingController(text: _format(widget.value));
   final _focusNode = FocusNode();
-  late double _committed = widget.value;
+  late double _committed;
 
   @override
   void initState() {
     super.initState();
+    _committed = widget.value;
     _focusNode.addListener(_onFocusChanged);
   }
 
   @override
   void didUpdateWidget(NumberField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != oldWidget.value) {
+    // Values this field committed itself come back here; rewriting the
+    // text for them would move the cursor and drop input like "1.50".
+    if (widget.value != oldWidget.value && widget.value != _committed) {
       _committed = widget.value;
       _controller.text = _format(widget.value);
     }
@@ -56,16 +65,24 @@ class _NumberFieldState extends State<NumberField> {
   }
 
   void _onFocusChanged() {
-    if (!_focusNode.hasFocus) _commit();
+    if (!_focusNode.hasFocus) _revertInvalid();
   }
 
-  void _commit() {
+  /// Parses the text, or returns `null` if it is not an accepted number.
+  double? _parse() {
     final value = double.tryParse(_controller.text.trim());
-    if (value == null || value < 0) {
-      _controller.text = _format(_committed);
-      return;
-    }
-    if (value == _committed) return;
+    final min = widget.min;
+    if (value == null || (min != null && value < min)) return null;
+    return value;
+  }
+
+  void _revertInvalid() {
+    if (_parse() == null) _controller.text = _format(_committed);
+  }
+
+  void _onTextChanged(String _) {
+    final value = _parse();
+    if (value == null || value == _committed) return;
     _committed = value;
     widget.onChanged(value);
   }
@@ -81,9 +98,13 @@ class _NumberFieldState extends State<NumberField> {
     return TextField(
       controller: _controller,
       focusNode: _focusNode,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.numberWithOptions(
+        decimal: true,
+        signed: widget.min == null || widget.min! < 0,
+      ),
       decoration: InputDecoration(labelText: widget.label, isDense: true),
-      onSubmitted: (_) => _commit(),
+      onChanged: _onTextChanged,
+      onSubmitted: (_) => _revertInvalid(),
     );
   }
 }

@@ -8,7 +8,57 @@ sealed class ComponentEditorEvent extends Equatable {
   List<Object> get props => [];
 }
 
-/// The user edited the size of a [SizedComponent].
+/// The user selected the node at [path] in the component tree.
+final class ComponentEditorNodeSelected extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorNodeSelected] event.
+  const new(this.path);
+
+  /// The path of the node, see [ComponentTree].
+  final List<int> path;
+
+  @override
+  List<Object> get props => [path];
+}
+
+/// The user added a component of [type] inside the selected node.
+final class ComponentEditorChildAdded extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorChildAdded] event.
+  const new(this.type);
+
+  /// The type of the new component.
+  final ComponentType type;
+
+  @override
+  List<Object> get props => [type];
+}
+
+/// The user removed the node at [path] from the component tree.
+///
+/// The root cannot be removed.
+final class ComponentEditorNodeRemoved extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorNodeRemoved] event.
+  const new(this.path);
+
+  /// The path of the node, see [ComponentTree].
+  final List<int> path;
+
+  @override
+  List<Object> get props => [path];
+}
+
+/// The user edited the position of the selected [PositionedComponent].
+final class ComponentEditorPositionChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorPositionChanged] event.
+  const new(this.position);
+
+  /// The new position.
+  final ComponentPosition position;
+
+  @override
+  List<Object> get props => [position];
+}
+
+/// The user edited the size of the selected [SizedComponent].
 final class ComponentEditorSizeChanged extends ComponentEditorEvent {
   /// Creates a [ComponentEditorSizeChanged] event.
   const new(this.size);
@@ -20,7 +70,7 @@ final class ComponentEditorSizeChanged extends ComponentEditorEvent {
   List<Object> get props => [size];
 }
 
-/// The user edited the paint of a [PaintedComponent].
+/// The user edited the paint of the selected [PaintedComponent].
 final class ComponentEditorPaintChanged extends ComponentEditorEvent {
   /// Creates a [ComponentEditorPaintChanged] event.
   const new(this.paint);

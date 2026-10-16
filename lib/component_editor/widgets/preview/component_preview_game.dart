@@ -5,7 +5,8 @@ import 'package:flame_component_editor/component_editor/widgets/preview/flame_ma
 import 'package:flutter/painting.dart';
 
 /// {@template component_preview_game}
-/// A Flame game that renders a single [Component], centered on screen.
+/// A Flame game that renders a [Component] and its children, centered on
+/// screen.
 ///
 /// The game only renders: the component being edited is owned by the
 /// `ComponentEditorBloc` and pushed here with [show].
@@ -17,7 +18,8 @@ class ComponentPreviewGame extends FlameGame {
   Component _component;
   late flame.PositionComponent _preview;
 
-  /// The Flame component currently rendering the previewed [Component].
+  /// The Flame component currently rendering the previewed root
+  /// [Component]. Its children render the [Component] children.
   flame.PositionComponent get preview => _preview;
 
   @override
@@ -28,16 +30,16 @@ class ComponentPreviewGame extends FlameGame {
 
   /// Renders [component] instead of the current one.
   ///
-  /// The existing Flame component is updated in place, unless [component]
-  /// is of a different type.
+  /// The existing Flame components are updated in place, unless components
+  /// were added, removed or changed type (see [haveSameShape]).
   Future<void> show(Component component) async {
     final previous = _component;
     _component = component;
     if (!isLoaded) return;
-    if (component.type != previous.type) {
-      await _rebuild();
+    if (haveSameShape(previous, component)) {
+      applyTree(_preview, component);
     } else {
-      applyProperties(_preview, component);
+      await _rebuild();
     }
   }
 

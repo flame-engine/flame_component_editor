@@ -55,13 +55,16 @@ three pass.
   list/add/edit/delete components; adding asks for a name and a component
   type), `project_settings` (settings dialog: generated code output path,
   stored in `<project>/.flame_editor/settings.json`) and `component_editor`
-  (live Flame preview in the center, properties panel on the right, explicit
-  save with button or Cmd/Ctrl+S, unsaved-changes prompt when leaving). Packages: `key_value_storage_client`,
+  (component tree on the left to add/remove/select nested children, live
+  Flame preview in the center, properties of the selected node on the right,
+  explicit save with button or Cmd/Ctrl+S, unsaved-changes prompt when
+  leaving). Packages: `key_value_storage_client`,
   `file_system_client`, `project_repository`, `component_repository`
   (components stored in `<project>/.flame_editor/components/<name>.json`) —
   see "Existing modules" in [docs/architecture.md](docs/architecture.md).
-- Component types: only `rectangle` (size + paint with color and fill
-  style). Properties are shared between types through capability interfaces —
+- Component types: only `rectangle` (position — edited only on children —,
+  size, and paint with color and fill style). Components can have children
+  (see "Component tree" in [docs/architecture.md](docs/architecture.md)). Properties are shared between types through capability interfaces —
   see "Component types & shared properties" in
   [docs/architecture.md](docs/architecture.md) before adding a type or
   property.

@@ -45,7 +45,7 @@ void main() {
       await tester.pumpRouteTransition();
 
       expect(find.byType(ComponentEditorView), findsOneWidget);
-      expect(find.text('Player'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Player'), findsOneWidget);
     });
   });
 
@@ -101,6 +101,116 @@ void main() {
       ).called(1);
     });
 
+    group('component tree', () {
+      const child = RectangleComponent(
+        name: 'rectangle1',
+        position: ComponentPosition(x: 5, y: 6),
+      );
+      const tree = RectangleComponent(name: 'Player', children: [child]);
+
+      void stubTree({List<int> selectedPath = const []}) {
+        when(() => bloc.state).thenReturn(
+          ComponentEditorState(
+            component: tree,
+            savedComponent: tree,
+            selectedPath: selectedPath,
+          ),
+        );
+      }
+
+      testWidgets('lists the root and its children', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        final panel = find.byType(ComponentTreePanel);
+        expect(panel, findsOneWidget);
+        expect(
+          find.descendant(of: panel, matching: find.text('Player')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: panel, matching: find.text('rectangle1')),
+          findsOneWidget,
+        );
+        final root = tester.widget<ListTile>(
+          find.widgetWithText(ListTile, 'Player'),
+        );
+        expect(root.selected, isTrue);
+      });
+
+      testWidgets('selects a node when tapped', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.text('rectangle1'));
+
+        verify(() => bloc.add(const ComponentEditorNodeSelected([0])))
+            .called(1);
+      });
+
+      testWidgets('adds a child of the picked type', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('Add child'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.tap(find.text('Rectangle'));
+
+        verify(
+          () => bloc.add(
+            const ComponentEditorChildAdded(ComponentType.rectangle),
+          ),
+        ).called(1);
+      });
+
+      testWidgets('cannot remove the root', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        final remove = tester.widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.delete_outline),
+        );
+        expect(remove.onPressed, isNull);
+      });
+
+      testWidgets('removes the selected child', (tester) async {
+        stubTree(selectedPath: [0]);
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('Remove'));
+
+        verify(() => bloc.add(const ComponentEditorNodeRemoved([0]))).called(1);
+      });
+
+      testWidgets('hides the position of the root', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        expect(find.byType(PositionEditor), findsNothing);
+        expect(find.byType(SizeEditor), findsOneWidget);
+      });
+
+      testWidgets('edits the position of a selected child', (tester) async {
+        stubTree(selectedPath: [0]);
+        await tester.pumpApp(buildSubject());
+
+        expect(find.byType(PositionEditor), findsOneWidget);
+        expect(find.widgetWithText(TextField, '5'), findsOneWidget);
+
+        await tester.enterText(find.widgetWithText(TextField, 'X'), '-10');
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+
+        verify(
+          () => bloc.add(
+            const ComponentEditorPositionChanged(
+              ComponentPosition(x: -10, y: 6),
+            ),
+          ),
+        ).called(1);
+      });
+    });
+
     testWidgets('disables save without changes', (tester) async {
       await tester.pumpApp(buildSubject());
 
@@ -108,7 +218,7 @@ void main() {
         find.widgetWithIcon(IconButton, Icons.save_outlined),
       );
       expect(save.onPressed, isNull);
-      expect(find.text('Player'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Player'), findsOneWidget);
     });
 
     group('with changes', () {
