@@ -1,3 +1,4 @@
+import 'package:component_repository/component_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,15 +7,28 @@ import 'package:project_repository/project_repository.dart';
 
 class _MockProjectRepository extends Mock implements ProjectRepository;
 
+class _MockComponentRepository extends Mock implements ComponentRepository;
+
 extension PumpApp on WidgetTester {
   /// Pumps [widget] wrapped in the app-level dependencies (theme, providers).
   ///
   /// Add repository/bloc providers here as they are introduced so that every
   /// widget test gets the same environment.
-  Future<void> pumpApp(Widget widget, {ProjectRepository? projectRepository}) {
+  Future<void> pumpApp(
+    Widget widget, {
+    ProjectRepository? projectRepository,
+    ComponentRepository? componentRepository,
+  }) {
     return pumpWidget(
-      RepositoryProvider.value(
-        value: projectRepository ?? _MockProjectRepository(),
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider.value(
+            value: projectRepository ?? _MockProjectRepository(),
+          ),
+          RepositoryProvider.value(
+            value: componentRepository ?? _MockComponentRepository(),
+          ),
+        ],
         child: MaterialApp(home: widget),
       ),
     );

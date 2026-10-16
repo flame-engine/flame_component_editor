@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:component_repository/component_repository.dart';
 import 'package:flame_component_editor/home/home.dart';
 import 'package:flame_component_editor/home/widgets/widgets.dart';
 import 'package:flame_component_editor/project/project.dart';
@@ -11,6 +12,8 @@ import 'package:project_repository/project_repository.dart';
 import '../../helpers/helpers.dart';
 
 class _MockProjectRepository extends Mock implements ProjectRepository;
+
+class _MockComponentRepository extends Mock implements ComponentRepository;
 
 class _MockHomeBloc extends MockBloc<HomeEvent, HomeState> implements HomeBloc;
 
@@ -105,7 +108,14 @@ void main() {
           ),
         );
 
-        await tester.pumpApp(buildSubject());
+        final componentRepository = _MockComponentRepository();
+        when(() => componentRepository.getComponents(project.path))
+            .thenAnswer((_) async => []);
+
+        await tester.pumpApp(
+          buildSubject(),
+          componentRepository: componentRepository,
+        );
         await tester.pumpAndSettle();
 
         expect(find.byType(ProjectPage), findsOneWidget);

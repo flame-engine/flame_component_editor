@@ -1,22 +1,49 @@
+import 'package:bloc_test/bloc_test.dart';
+import 'package:component_repository/component_repository.dart';
+import 'package:flame_component_editor/component_editor/component_editor.dart';
 import 'package:flame_component_editor/project/project.dart';
+import 'package:flame_component_editor/project/widgets/widgets.dart';
+import 'package:flame_component_editor/project_settings/project_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:project_repository/project_repository.dart';
 
 import '../../helpers/helpers.dart';
 
+class _MockComponentRepository extends Mock implements ComponentRepository;
+
+class _MockProjectBloc extends MockBloc<ProjectEvent, ProjectState>
+    implements ProjectBloc;
+
 void main() {
   const project = Project(path: '/projects/my_game');
+  const player = Component(name: 'Player');
+
+  setUpAll(() => registerFallbackValue(const ProjectComponentsRequested()));
 
   group(ProjectPage, () {
-    testWidgets('shows the project name and path', (tester) async {
-      await tester.pumpApp(const ProjectPage(project: project));
+    testWidgets('loads the components', (tester) async {
+      final componentRepository = _MockComponentRepository();
+      when(() => componentRepository.getComponents(project.path))
+          .thenAnswer((_) async => [player]);
 
-      expect(find.text('my_game'), findsOneWidget);
-      expect(find.text('/projects/my_game'), findsOneWidget);
+      await tester.pumpApp(
+        const ProjectPage(project: project),
+        componentRepository: componentRepository,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProjectView), findsOneWidget);
+      expect(find.text('Player'), findsOneWidget);
     });
 
     testWidgets('route can be pushed and popped', (tester) async {
+      final componentRepository = _MockComponentRepository();
+      when(() => componentRepository.getComponents(project.path))
+          .thenAnswer((_) async => []);
+
       await tester.pumpApp(
         Builder(
           builder: (context) => TextButton(
@@ -25,6 +52,7 @@ void main() {
             child: const Text('open'),
           ),
         ),
+        componentRepository: componentRepository,
       );
 
       await tester.tap(find.text('open'));
@@ -35,5 +63,223 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ProjectPage), findsNothing);
     });
+  });
+
+  group(ProjectView, () {
+    late ProjectBloc projectBloc;
+
+    setUp(() {
+      projectBloc = _MockProjectBloc();
+      when(() => projectBloc.state)
+          .thenReturn(const ProjectState(status: ProjectStatus.ready));
+    });
+
+    Widget buildSubject() => BlocProvider.value(
+      value: projectBloc,
+      child: const ProjectView(project: project),
+    );
+
+    testWidgets('shows the project name', (tester) async {
+      await tester.pumpApp(buildSubject());
+
+      expect(find.text('my_game'), findsOneWidget);
+    });
+
+    testWidgets('shows a progress indicator while loading', (tester) async {
+      when(() => projectBloc.state)
+          .thenReturn(const ProjectState(status: ProjectStatus.loading));
+
+      await tester.pumpApp(buildSubject());
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('shows an empty message without components', (tester) async {
+      await tester.pumpApp(buildSubject());
+
+      expect(find.text('No components yet'), findsOneWidget);
+    });
+
+    testWidgets('shows the components', (tester) async {
+      when(() => projectBloc.state).thenReturn(
+        const ProjectState(
+          status: ProjectStatus.ready,
+          components: [
+            Component(name: 'Enemy'),
+            player,
+          ],
+        ),
+      );
+
+      await tester.pumpApp(buildSubject());
+
+      expect(find.byType(ComponentTile), findsNWidgets(2));
+      expect(find.text('Enemy'), findsOneWidget);
+      expect(find.text('Player'), findsOneWidget);
+    });
+
+    testWidgets('opens the settings', (tester) async {
+      await tester.pumpApp(buildSubject());
+
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProjectSettingsPage), findsOneWidget);
+    });
+
+    testWidgets(
+      'opens the editor on edit and reloads components when coming back',
+      (tester) async {
+        when(() => projectBloc.state).thenReturn(
+          const ProjectState(status: ProjectStatus.ready, components: [player]),
+        );
+
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.byTooltip('Edit'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ComponentEditorPage), findsOneWidget);
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+
+        verify(() => projectBloc.add(const ProjectComponentsRequested()))
+            .called(1);
+      },
+    );
+
+    group('delete', () {
+      setUp(() {
+        when(() => projectBloc.state).thenReturn(
+          const ProjectState(status: ProjectStatus.ready, components: [player]),
+        );
+      });
+
+      testWidgets('asks for confirmation and deletes when confirmed', (
+        tester,
+      ) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.byTooltip('Delete'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(DeleteComponentDialog), findsOneWidget);
+
+        await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+        await tester.pumpAndSettle();
+
+        verify(
+          () => projectBloc.add(const ProjectComponentDeleteRequested(player)),
+        ).called(1);
+      });
+
+      testWidgets('does nothing when cancelled', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.byTooltip('Delete'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(DeleteComponentDialog), findsNothing);
+        verifyNever(() => projectBloc.add(any()));
+      });
+    });
+
+    group('add', () {
+      testWidgets('creates a component with the entered name', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField), ' Player ');
+        await tester.pump();
+        await tester.tap(find.text('Create'));
+        await tester.pumpAndSettle();
+
+        verify(
+          () =>
+              projectBloc.add(const ProjectComponentCreateRequested('Player')),
+        ).called(1);
+      });
+
+      testWidgets('submits with the keyboard', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField), 'Player');
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+
+        verify(
+          () =>
+              projectBloc.add(const ProjectComponentCreateRequested('Player')),
+        ).called(1);
+      });
+
+      testWidgets('disables create while the name is empty', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+
+        final create = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Create'),
+        );
+        expect(create.onPressed, isNull);
+
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+        expect(find.byType(AddComponentDialog), findsOneWidget);
+      });
+
+      testWidgets('does nothing when cancelled', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AddComponentDialog), findsNothing);
+        verifyNever(() => projectBloc.add(any()));
+      });
+    });
+
+    testWidgets('opens the editor when a component is created', (tester) async {
+      whenListen(
+        projectBloc,
+        Stream.value(
+          const ProjectState(
+            status: ProjectStatus.created,
+            components: [player],
+            createdComponent: player,
+          ),
+        ),
+        initialState: const ProjectState(status: ProjectStatus.ready),
+      );
+
+      await tester.pumpApp(buildSubject());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ComponentEditorPage), findsOneWidget);
+      expect(find.text('Player'), findsOneWidget);
+    });
+
+    for (final (status, message) in [
+      (ProjectStatus.invalidName, 'Component names must start'),
+      (ProjectStatus.alreadyExists, 'A component with that name already'),
+      (ProjectStatus.failure, 'Something went wrong'),
+    ]) {
+      testWidgets('shows a message on ${status.name}', (tester) async {
+        whenListen(
+          projectBloc,
+          Stream.value(ProjectState(status: status)),
+          initialState: const ProjectState(status: ProjectStatus.ready),
+        );
+
+        await tester.pumpApp(buildSubject());
+        await tester.pump();
+
+        expect(find.textContaining(message), findsOneWidget);
+      });
+    }
   });
 }
