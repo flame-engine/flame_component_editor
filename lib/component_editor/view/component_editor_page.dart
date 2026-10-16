@@ -34,7 +34,7 @@ class ComponentEditorPage extends StatelessWidget {
         component: component,
         componentRepository: context.read<ComponentRepository>(),
         projectRepository: context.read<ProjectRepository>(),
-      ),
+      )..add(const ComponentEditorStarted()),
       child: const ComponentEditorView(),
     );
   }

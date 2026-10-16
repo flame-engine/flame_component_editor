@@ -62,6 +62,8 @@ void main() {
       test('writes the component file and returns the component', () async {
         when(() => fileSystem.listFiles(directory, extension: '.json'))
             .thenAnswer((_) async => [fileOf('Enemy')]);
+        when(() => fileSystem.readFile(fileOf('Enemy')))
+            .thenAnswer((_) async => jsonEncode({'name': 'Enemy'}));
         when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
 
         expect(
@@ -118,6 +120,43 @@ void main() {
         });
       }
     });
+
+    for (final (name, existing) in [
+      ('AB', const RectangleComponent(name: 'a_b')),
+      (
+        'player_ship_head',
+        const RectangleComponent(
+          name: 'player_ship',
+          children: [RectangleComponent(name: 'head')],
+        ),
+      ),
+    ]) {
+      test('createComponent throws ComponentClassConflictException for '
+          '"$name" when ${existing.name} generates its class', () async {
+        when(() => fileSystem.listFiles(directory, extension: '.json'))
+            .thenAnswer((_) async => [fileOf(existing.name)]);
+        when(() => fileSystem.readFile(fileOf(existing.name)))
+            .thenAnswer((_) async => jsonEncode(existing.toJson()));
+
+        await expectLater(
+          repository.createComponent(
+            projectPath,
+            name,
+            ComponentType.rectangle,
+          ),
+          throwsA(
+            isA<ComponentClassConflictException>()
+                .having((e) => e.name, 'name', name)
+                .having(
+                  (e) => e.conflictingComponent,
+                  'conflictingComponent',
+                  existing.name,
+                ),
+          ),
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+    }
 
     group('saveComponent', () {
       test('writes the component file', () async {
@@ -205,6 +244,47 @@ void main() {
           ),
         );
         verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+    });
+
+    group('isComponentCodeUpToDate', () {
+      const component = RectangleComponent(name: 'PlayerShip');
+      const generator = ComponentCodeGenerator();
+      final codeFile = p.join(
+        projectPath,
+        'lib/components',
+        'player_ship.generated.dart',
+      );
+
+      Future<bool> isUpToDate() => repository.isComponentCodeUpToDate(
+        projectPath,
+        'lib/components',
+        component,
+      );
+
+      test('is false without generated code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => false);
+
+        expect(await isUpToDate(), isFalse);
+      });
+
+      test('is true when the file holds the current code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => generator.generate(component));
+
+        expect(await isUpToDate(), isTrue);
+      });
+
+      test('is false when the file holds other code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => '// hand-written');
+
+        expect(await isUpToDate(), isFalse);
       });
     });
 

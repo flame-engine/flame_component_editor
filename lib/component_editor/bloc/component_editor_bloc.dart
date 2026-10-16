@@ -29,6 +29,7 @@ class ComponentEditorBloc
   }) : super(
          ComponentEditorState(component: component, savedComponent: component),
        ) {
+    on<ComponentEditorStarted>(_onStarted);
     on<ComponentEditorNodeSelected>(_onNodeSelected);
     on<ComponentEditorChildAdded>(_onChildAdded);
     on<ComponentEditorNodeRemoved>(_onNodeRemoved);
@@ -42,6 +43,66 @@ class ComponentEditorBloc
   final Project _project;
   final ComponentRepository _componentRepository;
   final ProjectRepository _projectRepository;
+
+  /// How many saves were requested, so slower work started before a save
+  /// doesn't overwrite what the save found.
+  int _saves = 0;
+
+  /// The status after an edit: edits are allowed while saving, but must not
+  /// end the save, or another save could run at the same time.
+  ComponentEditorStatus get _editedStatus =>
+      state.status == ComponentEditorStatus.saving
+      ? ComponentEditorStatus.saving
+      : ComponentEditorStatus.ready;
+
+  Future<void> _onStarted(
+    ComponentEditorStarted event,
+    Emitter<ComponentEditorState> emit,
+  ) async {
+    // A save that started meanwhile loads the same things again, and its
+    // results are newer.
+    final saves = _saves;
+    bool isSaving() =>
+        _saves != saves || state.status == ComponentEditorStatus.saving;
+
+    try {
+      final taken = await _loadTakenClassNames();
+      if (isSaving()) return;
+      emit(state.copyWith(takenClassNames: taken));
+      // Clashes from before names were checked across components.
+      if (state.conflictingClassNames.isNotEmpty) {
+        emit(state.copyWith(status: ComponentEditorStatus.classConflict));
+      }
+    } on Exception {
+      // Names are still validated inside the tree, and against the other
+      // components when saving.
+    }
+
+    try {
+      final settings = await _projectRepository.getSettings(_project);
+      final isUpToDate = await _componentRepository.isComponentCodeUpToDate(
+        _project.path,
+        settings.outputPath,
+        state.savedComponent,
+      );
+      if (isSaving()) return;
+      emit(state.copyWith(isCodeOutdated: !isUpToDate));
+    } on Exception {
+      // Saving still needs changes then.
+    }
+  }
+
+  /// The [ComponentTree.generatedClassNames] of the other components of
+  /// the project, with the component that generates each one.
+  Future<Map<String, Component>> _loadTakenClassNames() async {
+    final components = await _componentRepository.getComponents(_project.path);
+    final name = state.component.name;
+    return {
+      for (final other in components)
+        if (other.name != name)
+          for (final className in other.generatedClassNames) className: other,
+    };
+  }
 
   void _onNodeSelected(
     ComponentEditorNodeSelected event,
@@ -58,12 +119,15 @@ class ComponentEditorBloc
     final component = state.component;
     final parentPath = state.selectedPath;
     final child = Component.create(
-      component.uniqueChildName(event.type),
+      component.uniqueChildName(
+        event.type,
+        takenClassNames: state.takenClassNames.keys.toSet(),
+      ),
       event.type,
     );
     emit(
       state.copyWith(
-        status: ComponentEditorStatus.ready,
+        status: _editedStatus,
         component: component.addChildAt(parentPath, child),
         selectedPath: [
           ...parentPath,
@@ -81,7 +145,7 @@ class ComponentEditorBloc
     if (path.isEmpty || !state.component.hasNodeAt(path)) return;
     emit(
       state.copyWith(
-        status: ComponentEditorStatus.ready,
+        status: _editedStatus,
         component: state.component.removeNodeAt(path),
         selectedPath: path.sublist(0, path.length - 1),
       ),
@@ -94,7 +158,12 @@ class ComponentEditorBloc
   ) {
     final path = state.selectedPath;
     if (path.isEmpty) return;
-    if (state.component.validateChildName(path, event.name) != null) return;
+    final error = state.component.validateChildName(
+      path,
+      event.name,
+      takenClassNames: state.takenClassNames.keys.toSet(),
+    );
+    if (error != null) return;
     _editSelected(emit, (node) => node.copyWithName(event.name));
   }
 
@@ -141,27 +210,70 @@ class ComponentEditorBloc
   ) {
     final component = state.component.updateNodeAt(state.selectedPath, edit);
     if (component == state.component) return;
-    emit(
-      state.copyWith(status: ComponentEditorStatus.ready, component: component),
-    );
+    emit(state.copyWith(status: _editedStatus, component: component));
   }
 
   Future<void> _onSaveRequested(
     ComponentEditorSaveRequested event,
     Emitter<ComponentEditorState> emit,
   ) async {
-    if (!state.hasChanges) return;
+    if (!state.canSave) return;
+    _saves++;
     final component = state.component;
     emit(state.copyWith(status: ComponentEditorStatus.saving));
+
+    // Names are validated as they are typed, but the other components may
+    // not have been loaded yet, or may clash with this one already. A
+    // component whose classes clash is not saved: its code wouldn't
+    // compile, and its file would reserve classes other components own.
+    final Map<String, Component> taken;
     try {
-      await _componentRepository.saveComponent(_project.path, component);
+      taken = await _loadTakenClassNames();
     } on Exception {
       emit(state.copyWith(status: ComponentEditorStatus.failure));
       return;
     }
+    if (component.generatedClassNames.any(taken.containsKey)) {
+      final conflict = state.copyWith(
+        status: ComponentEditorStatus.classConflict,
+        takenClassNames: taken,
+      );
+      // Clashing children may have been renamed while loading.
+      emit(
+        conflict.conflictingClassNames.isEmpty
+            ? conflict.copyWith(status: ComponentEditorStatus.ready)
+            : conflict,
+      );
+      return;
+    }
 
-    // The component is saved even if its code can't be generated.
-    final saved = state.copyWith(savedComponent: component);
+    try {
+      await _componentRepository.saveComponent(_project.path, component);
+    } on Exception {
+      emit(
+        state.copyWith(
+          status: ComponentEditorStatus.failure,
+          takenClassNames: taken,
+        ),
+      );
+      return;
+    }
+
+    // The component is saved even if its code can't be generated; it can
+    // then be saved again, without changes, to generate the code. States
+    // are built from the current state, which keeps edits made while
+    // saving.
+    void emitSaved(ComponentEditorStatus status) {
+      emit(
+        state.copyWith(
+          status: status,
+          savedComponent: component,
+          takenClassNames: taken,
+          isCodeOutdated: status != ComponentEditorStatus.saved,
+        ),
+      );
+    }
+
     try {
       final settings = await _projectRepository.getSettings(_project);
       await _componentRepository.writeComponentCode(
@@ -169,11 +281,11 @@ class ComponentEditorBloc
         settings.outputPath,
         component,
       );
-      emit(saved.copyWith(status: ComponentEditorStatus.saved));
+      emitSaved(ComponentEditorStatus.saved);
     } on GeneratedFileConflictException {
-      emit(saved.copyWith(status: ComponentEditorStatus.codeConflict));
+      emitSaved(ComponentEditorStatus.codeConflict);
     } on Exception {
-      emit(saved.copyWith(status: ComponentEditorStatus.codeFailure));
+      emitSaved(ComponentEditorStatus.codeFailure);
     }
   }
 }

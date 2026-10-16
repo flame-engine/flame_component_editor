@@ -14,6 +14,23 @@ String dartClassName(String name) {
   ].join();
 }
 
+/// The name of the class generated for a root component called [name],
+/// with the `$` prefix of generated code: `player_ship` becomes
+/// `$PlayerShip`.
+///
+/// The prefix keeps generated classes from clashing with the classes of
+/// the game (or Flame's), which can subclass them.
+String dartRootClassName(String name) => '\$${dartClassName(name)}';
+
+/// The name of the class generated for a child component called
+/// [childName] of the root component called [rootName]: the `head` of
+/// `player_ship` becomes `$PlayerShipHead`.
+///
+/// Only children that have children of their own get a class.
+String dartChildClassName(String rootName, String childName) {
+  return '${dartRootClassName(rootName)}${dartClassName(childName)}';
+}
+
 /// The name of the getter generated for a child component called [name]:
 /// `left_arm` and `LeftArm` become `leftArm`.
 String dartMemberName(String name) {

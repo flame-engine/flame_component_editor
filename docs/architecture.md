@@ -247,6 +247,43 @@ normalization. Root names are validated on creation: the class name must
 be a valid identifier, and no other component may generate the same file.
 Thanks to the `$` prefix, generated classes never shadow Flame types.
 
+Generated classes are public, so **class names must also be unique across
+the project** (a library importing two files that declare `$PlayerShipHead`
+won't compile). `ComponentTree.generatedClassNames` lists the classes a
+component reserves: its root class and `$<Root><Child>` for **every** child,
+even leaves (which only get a class once they have children), so adding a
+grandchild never causes a clash. The class names live in `dart_names.dart`
+(`dartRootClassName`, `dartChildClassName`), shared by the generator and
+the validation. `createComponent` throws `ComponentClassConflictException`
+when the new root class is reserved by another component (e.g. `AB` vs
+`a_b`, or `player_ship_head` vs the `head` child of `player_ship`). The
+editor loads the other components' classes on `ComponentEditorStarted`
+(`ComponentEditorState.takenClassNames`), and both `validateChildName`
+(`ChildNameError.conflict`) and `uniqueChildName` take them into account.
+Saving reloads the other components and checks the whole tree again
+(catching names typed before they loaded). **A component whose classes
+clash is not saved at all** (`classConflict` status; the changes stay
+pending): its code wouldn't compile, and its JSON would reserve classes
+that other components own. Clashes that already existed (e.g. `AB` and
+`a_b` created before this check) are reported when the editor opens.
+`takenClassNames` maps every class to the component that generates it, so
+the snackbar says how to fix each clash: rename the clashing children; or,
+when the root class clashes (`ComponentEditorState.rootClassOwner`), rename
+the child of the other component that generates it, or delete one of the
+two components if both roots generate it (components can't be renamed).
+
+`isCodeOutdated` is true when the generated code doesn't match the saved
+component: `ComponentEditorStarted` checks it with
+`ComponentRepository.isComponentCodeUpToDate` (missing, stale or
+hand-written file), and saves that don't generate the code (`codeConflict`,
+`codeFailure`) set it. `canSave` then lets the user save without changes,
+e.g. after deleting the other component or moving a hand-written file out
+of the way. Save states are built from the current state, so edits made
+while saving are kept; edits keep the `saving` status, so no second save
+starts meanwhile, and `ComponentEditorStarted` drops its results if a save
+started while it was loading (the save's are newer). The leave prompt's
+"save" only leaves once nothing is unsaved.
+
 ## Domain sketch (expected, not yet built)
 
 These are **likely** candidates as the editor grows; confirm with the user

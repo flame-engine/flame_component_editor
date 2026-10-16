@@ -83,6 +83,33 @@ void main() {
       );
     });
 
+    test('uniqueChildName skips names whose class is taken', () {
+      expect(
+        const RectangleComponent(name: 'Player').uniqueChildName(
+          ComponentType.rectangle,
+          takenClassNames: {r'$PlayerRectangle1', r'$PlayerRectangle2'},
+        ),
+        equals('rectangle3'),
+      );
+    });
+
+    test('generatedClassName is the class of the root', () {
+      expect(tree.generatedClassName, equals(r'$Player'));
+    });
+
+    test('generatedClassNames reserves a class for the root and every '
+        'child', () {
+      expect(
+        tree.generatedClassNames,
+        equals({
+          r'$Player',
+          r'$PlayerRectangle1',
+          r'$PlayerRectangle3',
+          r'$PlayerRectangle2',
+        }),
+      );
+    });
+
     group('validateChildName', () {
       test('accepts a free name, and the current name of the node', () {
         expect(tree.validateChildName(const [0], 'head'), isNull);
@@ -113,6 +140,19 @@ void main() {
           expect(
             tree.validateChildName(const [0], name),
             equals(ChildNameError.duplicate),
+          );
+        });
+      }
+
+      for (final name in ['ship_head', 'shipHead', 'ShipHead']) {
+        test('rejects "$name" when its class is taken', () {
+          expect(
+            tree.validateChildName(
+              const [0],
+              name,
+              takenClassNames: {r'$PlayerShipHead'},
+            ),
+            equals(ChildNameError.conflict),
           );
         });
       }

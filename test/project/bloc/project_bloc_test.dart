@@ -133,6 +133,49 @@ void main() {
       );
 
       blocTest<ProjectBloc, ProjectState>(
+        'emits classConflict when the class of the name is taken',
+        setUp: () =>
+            when(
+              () => componentRepository.createComponent(
+                project.path,
+                'player_ship_head',
+                ComponentType.rectangle,
+              ),
+            ).thenThrow(
+              const ComponentClassConflictException(
+                'player_ship_head',
+                'player_ship',
+              ),
+            ),
+        build: buildBloc,
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested(
+            'player_ship_head',
+            ComponentType.rectangle,
+          ),
+        ),
+        expect: () => const [
+          ProjectState(
+            status: ProjectStatus.classConflict,
+            conflictingComponent: 'player_ship',
+          ),
+        ],
+      );
+
+      test('conflictingComponent is cleared when the status changes', () {
+        const state = ProjectState(
+          status: ProjectStatus.classConflict,
+          conflictingComponent: 'player_ship',
+        );
+
+        expect(state.copyWith().conflictingComponent, equals('player_ship'));
+        expect(
+          state.copyWith(status: ProjectStatus.ready).conflictingComponent,
+          isNull,
+        );
+      });
+
+      blocTest<ProjectBloc, ProjectState>(
         'emits failure when creating fails',
         setUp: () => when(
           () => componentRepository.createComponent(

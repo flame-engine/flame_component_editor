@@ -65,6 +65,13 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       emit(state.copyWith(status: ProjectStatus.invalidName));
     } on ComponentAlreadyExistsException {
       emit(state.copyWith(status: ProjectStatus.alreadyExists));
+    } on ComponentClassConflictException catch (e) {
+      emit(
+        state.copyWith(
+          status: ProjectStatus.classConflict,
+          conflictingComponent: e.conflictingComponent,
+        ),
+      );
     } on Exception {
       emit(state.copyWith(status: ProjectStatus.failure));
     }

@@ -69,8 +69,25 @@ void main() {
 
   group(ProjectView, () {
     late ProjectBloc projectBloc;
+    late ComponentRepository componentRepository;
+    late ProjectRepository projectRepository;
 
     setUp(() {
+      // The editor opened from the view loads the components and checks
+      // the generated code too.
+      componentRepository = _MockComponentRepository();
+      projectRepository = _MockProjectRepository();
+      when(() => componentRepository.getComponents(project.path))
+          .thenAnswer((_) async => [player]);
+      when(() => projectRepository.getSettings(project))
+          .thenAnswer((_) async => const ProjectSettings());
+      when(
+        () => componentRepository.isComponentCodeUpToDate(
+          project.path,
+          const ProjectSettings().outputPath,
+          player,
+        ),
+      ).thenAnswer((_) async => true);
       projectBloc = _MockProjectBloc();
       when(() => projectBloc.state)
           .thenReturn(const ProjectState(status: ProjectStatus.ready));
@@ -143,7 +160,11 @@ void main() {
           const ProjectState(status: ProjectStatus.ready, components: [player]),
         );
 
-        await tester.pumpApp(buildSubject());
+        await tester.pumpApp(
+          buildSubject(),
+          componentRepository: componentRepository,
+          projectRepository: projectRepository,
+        );
         await tester.tap(find.byTooltip('Edit'));
         await tester.pumpRouteTransition();
 
@@ -292,11 +313,35 @@ void main() {
         initialState: const ProjectState(status: ProjectStatus.ready),
       );
 
-      await tester.pumpApp(buildSubject());
+      await tester.pumpApp(
+        buildSubject(),
+        componentRepository: componentRepository,
+        projectRepository: projectRepository,
+      );
       await tester.pumpRouteTransition();
 
       expect(find.byType(ComponentEditorPage), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Player'), findsOneWidget);
+    });
+
+    testWidgets('shows the conflicting component on classConflict', (
+      tester,
+    ) async {
+      whenListen(
+        projectBloc,
+        Stream.value(
+          const ProjectState(
+            status: ProjectStatus.classConflict,
+            conflictingComponent: 'player_ship',
+          ),
+        ),
+        initialState: const ProjectState(status: ProjectStatus.ready),
+      );
+
+      await tester.pumpApp(buildSubject());
+      await tester.pump();
+
+      expect(find.textContaining('"player_ship" component'), findsOneWidget);
     });
 
     for (final (status, message) in [

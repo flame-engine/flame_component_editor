@@ -20,6 +20,10 @@ enum ProjectStatus {
   /// A component with the requested name already exists.
   alreadyExists,
 
+  /// The class generated for the requested name is already generated for
+  /// another component; see [ProjectState.conflictingComponent].
+  classConflict,
+
   /// Something went wrong.
   failure,
 }
@@ -33,6 +37,7 @@ final class ProjectState extends Equatable {
     this.status = ProjectStatus.initial,
     this.components = const [],
     this.createdComponent,
+    this.conflictingComponent,
   });
 
   /// The current status.
@@ -44,19 +49,34 @@ final class ProjectState extends Equatable {
   /// The last created component.
   final Component? createdComponent;
 
+  /// The name of the component that already generates the class of the
+  /// last rejected name. Only set while the status is
+  /// [ProjectStatus.classConflict].
+  final String? conflictingComponent;
+
   /// Returns a copy of this state with the given fields replaced.
   ProjectState copyWith({
     ProjectStatus? status,
     List<Component>? components,
     Component? createdComponent,
+    String? conflictingComponent,
   }) {
     return ProjectState(
       status: status ?? this.status,
       components: components ?? this.components,
       createdComponent: createdComponent ?? this.createdComponent,
+      conflictingComponent:
+          (status ?? this.status) == ProjectStatus.classConflict
+          ? conflictingComponent ?? this.conflictingComponent
+          : null,
     );
   }
 
   @override
-  List<Object?> get props => [status, components, createdComponent];
+  List<Object?> get props => [
+    status,
+    components,
+    createdComponent,
+    conflictingComponent,
+  ];
 }
