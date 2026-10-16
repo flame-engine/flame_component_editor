@@ -7,14 +7,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// {@template component_editor_view}
-/// Previews the component being edited in the center and lists its
-/// properties on the right.
+/// Shows the tree of the component being edited on the left, its preview
+/// in the center and the properties of the selected node on the right.
 ///
 /// Changes are saved with the save button or Cmd/Ctrl+S.
 /// {@endtemplate}
 class ComponentEditorView extends StatelessWidget {
   /// {@macro component_editor_view}
   const new({super.key});
+
+  /// Width of the component tree panel.
+  static const treePanelWidth = 240.0;
 
   /// Width of the properties panel.
   static const propertiesPanelWidth = 320.0;
@@ -52,6 +55,8 @@ class ComponentEditorView extends StatelessWidget {
               body: const Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  SizedBox(width: treePanelWidth, child: ComponentTreePanel()),
+                  VerticalDivider(width: 1),
                   Expanded(child: ComponentPreview()),
                   VerticalDivider(width: 1),
                   SizedBox(

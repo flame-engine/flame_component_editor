@@ -296,7 +296,7 @@ void main() {
       await tester.pumpRouteTransition();
 
       expect(find.byType(ComponentEditorPage), findsOneWidget);
-      expect(find.text('Player'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Player'), findsOneWidget);
     });
 
     for (final (status, message) in [

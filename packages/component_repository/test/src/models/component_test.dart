@@ -20,6 +20,24 @@ void main() {
         );
       });
 
+      test('reads the children and skips invalid ones', () {
+        expect(
+          Component.fromJson(const {
+            'name': 'Player',
+            'children': [
+              {'name': 'rectangle1', 'type': 'rectangle'},
+              'invalid',
+            ],
+          }),
+          equals(
+            const RectangleComponent(
+              name: 'Player',
+              children: [RectangleComponent(name: 'rectangle1')],
+            ),
+          ),
+        );
+      });
+
       test('reads components without a type as rectangles', () {
         expect(
           Component.fromJson(const {'name': 'Player'}),

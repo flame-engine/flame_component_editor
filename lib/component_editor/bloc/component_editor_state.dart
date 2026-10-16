@@ -24,6 +24,7 @@ final class ComponentEditorState extends Equatable {
     required this.component,
     required this.savedComponent,
     this.status = ComponentEditorStatus.ready,
+    this.selectedPath = const [],
   });
 
   /// The current status.
@@ -35,6 +36,16 @@ final class ComponentEditorState extends Equatable {
   /// The component as it was last saved.
   final Component savedComponent;
 
+  /// The path of the selected node of the [component] tree, see
+  /// [ComponentTree]. The root, the empty path, is selected by default.
+  final List<int> selectedPath;
+
+  /// The selected node of the [component] tree.
+  Component get selectedNode => component.nodeAt(selectedPath);
+
+  /// Whether the selected node is the root [component].
+  bool get isRootSelected => selectedPath.isEmpty;
+
   /// Whether [component] has changes that were not saved yet.
   bool get hasChanges => component != savedComponent;
 
@@ -43,14 +54,16 @@ final class ComponentEditorState extends Equatable {
     ComponentEditorStatus? status,
     Component? component,
     Component? savedComponent,
+    List<int>? selectedPath,
   }) {
     return ComponentEditorState(
       status: status ?? this.status,
       component: component ?? this.component,
       savedComponent: savedComponent ?? this.savedComponent,
+      selectedPath: selectedPath ?? this.selectedPath,
     );
   }
 
   @override
-  List<Object> get props => [status, component, savedComponent];
+  List<Object> get props => [status, component, savedComponent, selectedPath];
 }

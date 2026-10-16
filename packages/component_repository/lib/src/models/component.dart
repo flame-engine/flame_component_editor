@@ -9,10 +9,13 @@ part 'rectangle_component.dart';
 /// Each subclass is one [ComponentType]. The properties a component has are
 /// declared through capability interfaces such as [SizedComponent] and
 /// [PaintedComponent], so that editors can be shared between types.
+///
+/// Like in Flame, a component can have [children]; see [ComponentTree] to
+/// navigate and edit them.
 /// {@endtemplate}
 sealed class Component extends Equatable {
   /// {@macro component}
-  const new({required this.name});
+  const new({required this.name, this.children = const []});
 
   /// Creates a component of [type] called [name] with default properties.
   factory create(String name, ComponentType type) {
@@ -23,23 +26,46 @@ sealed class Component extends Equatable {
 
   /// Creates a [Component] from its JSON representation.
   ///
-  /// Components saved without a type are read as rectangles.
+  /// Components saved without a type are read as rectangles. The children
+  /// are read here, for every type, so subtypes only read their own
+  /// properties.
   factory fromJson(Map<String, dynamic> json) {
     final type = ComponentType.fromKey(json['type']) ?? ComponentType.rectangle;
-    return switch (type) {
-      ComponentType.rectangle => RectangleComponent.fromJson(json),
+    final component = switch (type) {
+      ComponentType.rectangle => RectangleComponent._fromJson(json),
     };
+    return component.copyWithChildren(_childrenFromJson(json['children']));
   }
 
-  /// The component name, which is also used as its class name.
+  static List<Component> _childrenFromJson(Object? json) {
+    return [
+      if (json is List)
+        for (final child in json)
+          if (child is Map<String, dynamic>) Component.fromJson(child),
+    ];
+  }
+
+  /// The component name.
+  ///
+  /// The root component name is used as its class name.
   final String name;
+
+  /// The components added to this one.
+  final List<Component> children;
 
   /// The type of this component.
   ComponentType get type;
 
+  /// Returns a copy of this component with [children] replaced.
+  Component copyWithChildren(List<Component> children);
+
   /// Converts this component to its JSON representation.
-  Map<String, dynamic> toJson() => {'name': name, 'type': type.key};
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'type': type.key,
+    'children': [for (final child in children) child.toJson()],
+  };
 
   @override
-  List<Object> get props => [name, type];
+  List<Object> get props => [name, type, children];
 }

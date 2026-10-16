@@ -69,6 +69,126 @@ void main() {
       ],
     );
 
+    group('component tree', () {
+      const child = RectangleComponent(name: 'rectangle1');
+      const tree = RectangleComponent(name: 'Player', children: [child]);
+      const treeState = ComponentEditorState(
+        component: tree,
+        savedComponent: tree,
+      );
+
+      test('selects the root by default', () {
+        final state = buildBloc().state;
+
+        expect(state.selectedPath, isEmpty);
+        expect(state.isRootSelected, isTrue);
+        expect(state.selectedNode, equals(component));
+      });
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorNodeSelected selects the node',
+        build: buildBloc,
+        seed: () => treeState,
+        act: (bloc) => bloc.add(const ComponentEditorNodeSelected([0])),
+        expect: () => [
+          isA<ComponentEditorState>()
+              .having((s) => s.selectedPath, 'selectedPath', [0])
+              .having((s) => s.selectedNode, 'selectedNode', child)
+              .having((s) => s.hasChanges, 'hasChanges', isFalse),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorNodeSelected ignores paths that do not exist',
+        build: buildBloc,
+        seed: () => treeState,
+        act: (bloc) => bloc.add(const ComponentEditorNodeSelected([3])),
+        expect: () => const <ComponentEditorState>[],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorChildAdded adds a child to the selected node and '
+        'selects it',
+        build: buildBloc,
+        seed: () => treeState.copyWith(selectedPath: [0]),
+        act: (bloc) =>
+            bloc.add(const ComponentEditorChildAdded(ComponentType.rectangle)),
+        expect: () => const [
+          ComponentEditorState(
+            component: RectangleComponent(
+              name: 'Player',
+              children: [
+                RectangleComponent(
+                  name: 'rectangle1',
+                  children: [RectangleComponent(name: 'rectangle2')],
+                ),
+              ],
+            ),
+            savedComponent: tree,
+            selectedPath: [0, 0],
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorNodeRemoved removes the node and selects its parent',
+        build: buildBloc,
+        seed: () => treeState.copyWith(selectedPath: [0]),
+        act: (bloc) => bloc.add(const ComponentEditorNodeRemoved([0])),
+        expect: () => const [
+          ComponentEditorState(
+            component: RectangleComponent(name: 'Player'),
+            savedComponent: tree,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorNodeRemoved never removes the root',
+        build: buildBloc,
+        seed: () => treeState,
+        act: (bloc) => bloc.add(const ComponentEditorNodeRemoved([])),
+        expect: () => const <ComponentEditorState>[],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'property changes edit the selected node',
+        build: buildBloc,
+        seed: () => treeState.copyWith(selectedPath: [0]),
+        act: (bloc) => bloc
+          ..add(const ComponentEditorPositionChanged(ComponentPosition(x: 5)))
+          ..add(const ComponentEditorSizeChanged(size))
+          ..add(const ComponentEditorPaintChanged(paint)),
+        skip: 2,
+        expect: () => const [
+          ComponentEditorState(
+            component: RectangleComponent(
+              name: 'Player',
+              children: [
+                RectangleComponent(
+                  name: 'rectangle1',
+                  position: ComponentPosition(x: 5),
+                  size: size,
+                  paint: paint,
+                ),
+              ],
+            ),
+            savedComponent: tree,
+            selectedPath: [0],
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'property changes that change nothing emit nothing',
+        build: buildBloc,
+        seed: () => treeState,
+        act: (bloc) =>
+            bloc.add(const ComponentEditorSizeChanged(ComponentSize())),
+        expect: () => const <ComponentEditorState>[],
+      );
+    });
+
     group(ComponentEditorSaveRequested, () {
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'saves the component and clears the changes',

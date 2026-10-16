@@ -129,10 +129,10 @@ dependencies:
 | Data | `packages/key_value_storage_client` | Generic string key-value storage (`shared_preferences`) |
 | Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory/file existence, list/read/write/delete files |
 | Repository | `packages/project_repository` | `Project` and `ProjectSettings` models; pick/open projects; last 10 recent projects; read/write project settings (`<project>/.flame_editor/settings.json`) and pick a project-relative output folder |
-| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentSize`, `ComponentPaint`) and capability interfaces; list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`) |
+| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`), capability interfaces and the `ComponentTree` extension for nested children; list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`) |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
 | Bloc + view | `lib/project/` | Project dashboard: lists components, add (name + type dialog → editor), edit, delete (with confirmation), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
-| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: Flame preview (center), properties panel (right), save button + Cmd/Ctrl+S, unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
+| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: component tree (left, add/remove children, root selected by default), Flame preview (center), properties panel for the selected node (right), save button + Cmd/Ctrl+S, unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
 | Bloc + view | `lib/project_settings/` | Project settings dialog, `ProjectSettingsDialog.show(context, project)`: output path for generated Dart code (default `lib/components`, text field + Browse) |
 
 `project_repository` and `component_repository` have no Flutter imports, but
@@ -150,23 +150,41 @@ component types only declare which ones they have:
 
 | Piece | Where | Example |
 | --- | --- | --- |
-| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentSize`, `ComponentPaint` |
-| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `SizedComponent`, `PaintedComponent` |
-| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements SizedComponent, PaintedComponent` |
-| Bloc event | `lib/component_editor/bloc/` | `ComponentEditorSizeChanged` (handled for any `SizedComponent`) |
+| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentSize`, `ComponentPaint` |
+| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `SizedComponent`, `PaintedComponent` |
+| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, SizedComponent, PaintedComponent` |
+| Bloc event | `lib/component_editor/bloc/` | `ComponentEditorSizeChanged` (edits the selected node if it is a `SizedComponent`) |
 | Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `SizeEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
 | Panel wiring | `lib/component_editor/widgets/properties_panel.dart` | `if (component case SizedComponent c) SizeEditor(...)` |
-| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applySize`, `applyPaint`, `buildFlameComponent` |
+| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applySize`, `applyPaint`, `buildFlameComponent` |
 
 **Adding a component type:** add a `ComponentType` value, a `Component`
-subclass implementing the right capabilities (reuse the value objects' JSON),
-and cases in `Component.create`/`Component.fromJson` and
+subclass implementing the right capabilities (reuse the value objects' JSON;
+its private `_fromJson` reads only its own properties, `Component.fromJson`
+reads the children for every type), and cases in
+`Component.create`/`Component.fromJson` and
 `buildFlameComponent`. The panel, bloc and preview pick up its properties
 automatically.
 
 **Adding a property:** add the value object and capability interface, a bloc
 event, an editor widget, a branch in `PropertiesPanel` and in
 `applyProperties`, then implement the capability on the types that have it.
+
+### Component tree
+
+Like in Flame, every `Component` has `children` (stored nested in the same
+JSON file). A node is addressed by its **path**, the list of child indices
+from the root (`[]` is the root); `ComponentTree` (`nodeAt`, `updateNodeAt`,
+`addChildAt`, `removeNodeAt`, `uniqueChildName`) does all the immutable tree
+edits. The editor state holds `selectedPath`, and every property event edits
+`selectedNode`. New children get a unique default name such as `rectangle1`.
+
+The position is only edited on children (`PropertiesPanel` hides it for the
+root, which is placed by whoever uses it). In the preview the root is
+centered with a center anchor (its stored position is ignored); children keep Flame's default top left anchor
+and are positioned relative to their parent. `ComponentPreviewGame.show`
+updates the Flame components in place while the tree shape is unchanged
+(`haveSameShape`) and rebuilds them otherwise.
 
 Domain models avoid `dart:ui`: colors are ARGB `int`s and `PaintStyle` mirrors
 `PaintingStyle`. Conversion to Flame/Flutter types happens only in
