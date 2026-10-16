@@ -52,8 +52,10 @@ three pass.
 ## Current state
 
 - Features: `home` (open project + recent projects), `project` (dashboard:
-  list/add/edit/delete components), and placeholders `component_editor` and
-  `project_settings`. Packages: `key_value_storage_client`,
+  list/add/edit/delete components), `project_settings` (settings dialog:
+  generated code output path, stored in
+  `<project>/.flame_editor/settings.json`) and the placeholder
+  `component_editor`. Packages: `key_value_storage_client`,
   `file_system_client`, `project_repository`, `component_repository`
   (components stored in `<project>/.flame_editor/components/<name>.json`) —
   see "Existing modules" in [docs/architecture.md](docs/architecture.md).

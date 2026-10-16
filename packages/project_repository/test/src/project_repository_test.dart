@@ -122,5 +122,123 @@ void main() {
         },
       );
     });
+    group('settings', () {
+      const project = Project(path: '/projects/my_game');
+      const settingsPath = '/projects/my_game/.flame_editor/settings.json';
+
+      setUp(() {
+        when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
+      });
+
+      group('getSettings', () {
+        test('returns the defaults when no settings were saved', () async {
+          when(() => fileSystem.fileExists(settingsPath))
+              .thenAnswer((_) async => false);
+
+          expect(
+            await repository.getSettings(project),
+            const ProjectSettings(),
+          );
+        });
+
+        test('returns the defaults when the settings are corrupt', () async {
+          when(() => fileSystem.fileExists(settingsPath))
+              .thenAnswer((_) async => true);
+          when(() => fileSystem.readFile(settingsPath))
+              .thenAnswer((_) async => 'not json');
+
+          expect(
+            await repository.getSettings(project),
+            const ProjectSettings(),
+          );
+        });
+
+        test('returns the saved settings', () async {
+          when(() => fileSystem.fileExists(settingsPath))
+              .thenAnswer((_) async => true);
+          when(() => fileSystem.readFile(settingsPath))
+              .thenAnswer((_) async => '{"outputPath":"lib/game"}');
+
+          expect(
+            await repository.getSettings(project),
+            const ProjectSettings(outputPath: 'lib/game'),
+          );
+        });
+      });
+
+      group('saveSettings', () {
+        test('writes the normalized settings', () async {
+          final saved = await repository.saveSettings(
+            project,
+            const ProjectSettings(outputPath: ' lib/./game/components/ '),
+          );
+
+          expect(
+            saved,
+            const ProjectSettings(outputPath: 'lib/game/components'),
+          );
+          verify(
+            () => fileSystem.writeFile(
+              settingsPath,
+              '{"outputPath":"lib/game/components"}',
+            ),
+          ).called(1);
+        });
+
+        for (final path in [
+          '',
+          '  ',
+          '.',
+          'lib/..',
+          '..',
+          '../other',
+          '/abs',
+        ]) {
+          test('throws for "$path"', () async {
+            await expectLater(
+              repository.saveSettings(
+                project,
+                ProjectSettings(outputPath: path),
+              ),
+              throwsA(
+                isA<InvalidOutputPathException>().having(
+                  (e) => e.path,
+                  'path',
+                  path,
+                ),
+              ),
+            );
+            verifyNever(() => fileSystem.writeFile(any(), any()));
+          });
+        }
+      });
+
+      group('pickOutputPath', () {
+        test('returns null when cancelled', () async {
+          when(() => fileSystem.pickDirectory()).thenAnswer((_) async => null);
+
+          expect(await repository.pickOutputPath(project), isNull);
+        });
+
+        test('returns the picked folder relative to the project', () async {
+          when(() => fileSystem.pickDirectory())
+              .thenAnswer((_) async => '/projects/my_game/lib/game');
+
+          expect(await repository.pickOutputPath(project), 'lib/game');
+        });
+
+        for (final picked in ['/projects/other', '/projects/my_game']) {
+          test('throws when picking "$picked"', () async {
+            when(() => fileSystem.pickDirectory())
+                .thenAnswer((_) async => picked);
+
+            await expectLater(
+              repository.pickOutputPath(project),
+              throwsA(isA<InvalidOutputPathException>()),
+            );
+          });
+        }
+      });
+    });
   });
 }
