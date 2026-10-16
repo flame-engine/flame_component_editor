@@ -1,5 +1,5 @@
 name: component_repository
-description: Repository for listing, creating and deleting a project's components.
+description: Repository for listing, creating, saving and deleting a project's components.
 version: 0.1.0+1
 publish_to: none
 

@@ -1,4 +1,5 @@
-/// Repository for listing, creating and deleting a project's components.
+/// Repository for listing, creating, saving and deleting a project's
+/// components.
 library;
 
 export 'src/component_repository.dart';

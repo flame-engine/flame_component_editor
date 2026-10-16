@@ -10,8 +10,8 @@ class _MockComponentRepository extends Mock implements ComponentRepository;
 void main() {
   group(ProjectBloc, () {
     const project = Project(path: '/projects/my_game');
-    const player = Component(name: 'Player');
-    const enemy = Component(name: 'Enemy');
+    const player = RectangleComponent(name: 'Player');
+    const enemy = RectangleComponent(name: 'Enemy');
 
     late ComponentRepository componentRepository;
 
@@ -62,14 +62,22 @@ void main() {
         'emits created with the new component and reloaded components',
         setUp: () {
           when(
-            () => componentRepository.createComponent(project.path, 'Player'),
+            () => componentRepository.createComponent(
+              project.path,
+              'Player',
+              ComponentType.rectangle,
+            ),
           ).thenAnswer((_) async => player);
           when(() => componentRepository.getComponents(project.path))
               .thenAnswer((_) async => [player]);
         },
         build: buildBloc,
-        act: (bloc) =>
-            bloc.add(const ProjectComponentCreateRequested('Player')),
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested(
+            'Player',
+            ComponentType.rectangle,
+          ),
+        ),
         expect: () => const [
           ProjectState(
             status: ProjectStatus.created,
@@ -81,33 +89,55 @@ void main() {
 
       blocTest<ProjectBloc, ProjectState>(
         'emits invalidName when the name is invalid',
-        setUp: () =>
-            when(() => componentRepository.createComponent(project.path, '1'))
-                .thenThrow(const InvalidComponentNameException('1')),
+        setUp: () => when(
+          () => componentRepository.createComponent(
+            project.path,
+            '1',
+            ComponentType.rectangle,
+          ),
+        ).thenThrow(const InvalidComponentNameException('1')),
         build: buildBloc,
-        act: (bloc) => bloc.add(const ProjectComponentCreateRequested('1')),
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested('1', ComponentType.rectangle),
+        ),
         expect: () => const [ProjectState(status: ProjectStatus.invalidName)],
       );
 
       blocTest<ProjectBloc, ProjectState>(
         'emits alreadyExists when the name is taken',
         setUp: () => when(
-          () => componentRepository.createComponent(project.path, 'Player'),
+          () => componentRepository.createComponent(
+            project.path,
+            'Player',
+            ComponentType.rectangle,
+          ),
         ).thenThrow(const ComponentAlreadyExistsException('Player')),
         build: buildBloc,
-        act: (bloc) =>
-            bloc.add(const ProjectComponentCreateRequested('Player')),
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested(
+            'Player',
+            ComponentType.rectangle,
+          ),
+        ),
         expect: () => const [ProjectState(status: ProjectStatus.alreadyExists)],
       );
 
       blocTest<ProjectBloc, ProjectState>(
         'emits failure when creating fails',
         setUp: () => when(
-          () => componentRepository.createComponent(project.path, 'Player'),
+          () => componentRepository.createComponent(
+            project.path,
+            'Player',
+            ComponentType.rectangle,
+          ),
         ).thenThrow(Exception()),
         build: buildBloc,
-        act: (bloc) =>
-            bloc.add(const ProjectComponentCreateRequested('Player')),
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested(
+            'Player',
+            ComponentType.rectangle,
+          ),
+        ),
         expect: () => const [ProjectState(status: ProjectStatus.failure)],
       );
     });

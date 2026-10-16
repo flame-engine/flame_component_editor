@@ -21,7 +21,7 @@ class _MockProjectBloc extends MockBloc<ProjectEvent, ProjectState>
 
 void main() {
   const project = Project(path: '/projects/my_game');
-  const player = Component(name: 'Player');
+  const player = RectangleComponent(name: 'Player');
 
   setUpAll(() => registerFallbackValue(const ProjectComponentsRequested()));
 
@@ -107,7 +107,7 @@ void main() {
         const ProjectState(
           status: ProjectStatus.ready,
           components: [
-            Component(name: 'Enemy'),
+            RectangleComponent(name: 'Enemy'),
             player,
           ],
         ),
@@ -145,12 +145,12 @@ void main() {
 
         await tester.pumpApp(buildSubject());
         await tester.tap(find.byTooltip('Edit'));
-        await tester.pumpAndSettle();
+        await tester.pumpRouteTransition();
 
         expect(find.byType(ComponentEditorPage), findsOneWidget);
 
         await tester.pageBack();
-        await tester.pumpAndSettle();
+        await tester.pumpRouteTransition();
 
         verify(() => projectBloc.add(const ProjectComponentsRequested()))
             .called(1);
@@ -199,14 +199,21 @@ void main() {
         await tester.tap(find.text('Add component'));
         await tester.pumpAndSettle();
 
-        await tester.enterText(find.byType(TextField), ' Player ');
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Name'),
+          ' Player ',
+        );
         await tester.pump();
         await tester.tap(find.text('Create'));
         await tester.pumpAndSettle();
 
         verify(
-          () =>
-              projectBloc.add(const ProjectComponentCreateRequested('Player')),
+          () => projectBloc.add(
+            const ProjectComponentCreateRequested(
+              'Player',
+              ComponentType.rectangle,
+            ),
+          ),
         ).called(1);
       });
 
@@ -215,14 +222,34 @@ void main() {
         await tester.tap(find.text('Add component'));
         await tester.pumpAndSettle();
 
-        await tester.enterText(find.byType(TextField), 'Player');
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Name'),
+          'Player',
+        );
         await tester.testTextInput.receiveAction(TextInputAction.done);
         await tester.pumpAndSettle();
 
         verify(
-          () =>
-              projectBloc.add(const ProjectComponentCreateRequested('Player')),
+          () => projectBloc.add(
+            const ProjectComponentCreateRequested(
+              'Player',
+              ComponentType.rectangle,
+            ),
+          ),
         ).called(1);
+      });
+
+      testWidgets('offers the component types', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(DropdownMenu<ComponentType>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Rectangle').last);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Rectangle'), findsWidgets);
       });
 
       testWidgets('disables create while the name is empty', (tester) async {
@@ -266,7 +293,7 @@ void main() {
       );
 
       await tester.pumpApp(buildSubject());
-      await tester.pumpAndSettle();
+      await tester.pumpRouteTransition();
 
       expect(find.byType(ComponentEditorPage), findsOneWidget);
       expect(find.text('Player'), findsOneWidget);

@@ -28,7 +28,7 @@ class ComponentAlreadyExistsException implements Exception {
 }
 
 /// {@template component_repository}
-/// Lists, creates and deletes the components of a project.
+/// Lists, creates, saves and deletes the components of a project.
 ///
 /// Each component is stored as `<name>.json` inside the
 /// [componentsDirectory] of the project folder.
@@ -65,12 +65,17 @@ class ComponentRepository {
     return components..sort((a, b) => a.name.compareTo(b.name));
   }
 
-  /// Creates a component called [name] in the project at [projectPath].
+  /// Creates a component of [type] called [name], with default properties,
+  /// in the project at [projectPath].
   ///
   /// Throws an [InvalidComponentNameException] if [name] is not a valid
   /// identifier, or a [ComponentAlreadyExistsException] if a component with
   /// that name already exists.
-  Future<Component> createComponent(String projectPath, String name) async {
+  Future<Component> createComponent(
+    String projectPath,
+    String name,
+    ComponentType type,
+  ) async {
     if (!_validName.hasMatch(name)) {
       throw InvalidComponentNameException(name);
     }
@@ -80,14 +85,27 @@ class ComponentRepository {
       throw ComponentAlreadyExistsException(name);
     }
 
-    final component = Component(name: name);
-    await _fileSystem.writeFile(path, jsonEncode(component.toJson()));
+    final component = Component.create(name, type);
+    await _write(projectPath, component);
     return component;
+  }
+
+  /// Saves [component] in the project at [projectPath], replacing the
+  /// previously stored version.
+  Future<void> saveComponent(String projectPath, Component component) {
+    return _write(projectPath, component);
   }
 
   /// Deletes [component] from the project at [projectPath].
   Future<void> deleteComponent(String projectPath, Component component) {
     return _fileSystem.deleteFile(_file(projectPath, component.name));
+  }
+
+  Future<void> _write(String projectPath, Component component) {
+    return _fileSystem.writeFile(
+      _file(projectPath, component.name),
+      jsonEncode(component.toJson()),
+    );
   }
 
   String _directory(String projectPath) =>

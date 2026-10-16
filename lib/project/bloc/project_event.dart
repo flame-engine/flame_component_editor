@@ -14,16 +14,19 @@ final class ProjectComponentsRequested extends ProjectEvent {
   const new();
 }
 
-/// The user asked to create a component called [name].
+/// The user asked to create a component of [type] called [name].
 final class ProjectComponentCreateRequested extends ProjectEvent {
   /// Creates a [ProjectComponentCreateRequested] event.
-  const new(this.name);
+  const new(this.name, this.type);
 
   /// The name of the component to create.
   final String name;
 
+  /// The type of the component to create.
+  final ComponentType type;
+
   @override
-  List<Object> get props => [name];
+  List<Object> get props => [name, type];
 }
 
 /// The user confirmed that [component] should be deleted.

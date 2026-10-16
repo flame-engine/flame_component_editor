@@ -52,16 +52,23 @@ three pass.
 ## Current state
 
 - Features: `home` (open project + recent projects), `project` (dashboard:
-  list/add/edit/delete components), `project_settings` (settings dialog:
-  generated code output path, stored in
-  `<project>/.flame_editor/settings.json`) and the placeholder
-  `component_editor`. Packages: `key_value_storage_client`,
+  list/add/edit/delete components; adding asks for a name and a component
+  type), `project_settings` (settings dialog: generated code output path,
+  stored in `<project>/.flame_editor/settings.json`) and `component_editor`
+  (live Flame preview in the center, properties panel on the right, explicit
+  save with button or Cmd/Ctrl+S, unsaved-changes prompt when leaving). Packages: `key_value_storage_client`,
   `file_system_client`, `project_repository`, `component_repository`
   (components stored in `<project>/.flame_editor/components/<name>.json`) —
   see "Existing modules" in [docs/architecture.md](docs/architecture.md).
-- `bloc`, `flutter_bloc`, `equatable`, `bloc_test`, `mocktail` and `bloc_lint`
-  are dependencies; `flame` is **not yet** — add it when the editor canvas
-  needs it.
+- Component types: only `rectangle` (size + paint with color and fill
+  style). Properties are shared between types through capability interfaces —
+  see "Component types & shared properties" in
+  [docs/architecture.md](docs/architecture.md) before adding a type or
+  property.
+- `bloc`, `flutter_bloc`, `equatable`, `flame`, `flex_color_picker`
+  (pinned to 3.x: 4.x depends on the standalone `material_ui` package, whose
+  `MaterialLocalizations` don't match `flutter/material`), `bloc_test`,
+  `flame_test`, `mocktail` and `bloc_lint` are dependencies.
 - Toolchain: Flutter stable 3.47 / Dart 3.13. Dart 3.13 lints prefer the
   `new` constructor syntax (`const new({super.key});`) — `dart fix --apply`
   handles it.

@@ -1,17 +1,22 @@
+import 'package:component_repository/component_repository.dart';
 import 'package:flutter/material.dart';
 
+/// The name and type entered in the [AddComponentDialog].
+typedef AddComponentResult = ({String name, ComponentType type});
+
 /// {@template add_component_dialog}
-/// Asks the user for the name of a new component.
+/// Asks the user for the name and type of a new component.
 ///
-/// Pops with the entered name, or `null` if cancelled.
+/// Pops with the entered [AddComponentResult], or `null` if cancelled.
 /// {@endtemplate}
 class AddComponentDialog extends StatefulWidget {
   /// {@macro add_component_dialog}
   const new({super.key});
 
-  /// Shows the dialog and returns the entered name, or `null` if cancelled.
-  static Future<String?> show(BuildContext context) {
-    return showDialog<String>(
+  /// Shows the dialog and returns the entered name and type, or `null` if
+  /// cancelled.
+  static Future<AddComponentResult?> show(BuildContext context) {
+    return showDialog<AddComponentResult>(
       context: context,
       builder: (_) => const AddComponentDialog(),
     );
@@ -23,6 +28,7 @@ class AddComponentDialog extends StatefulWidget {
 
 class _AddComponentDialogState extends State<AddComponentDialog> {
   final _controller = TextEditingController();
+  ComponentType _type = ComponentType.values.first;
 
   @override
   void dispose() {
@@ -33,21 +39,44 @@ class _AddComponentDialogState extends State<AddComponentDialog> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) return;
-    Navigator.of(context).pop(name);
+    Navigator.of(context).pop((name: name, type: _type));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Add component'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Name',
-          hintText: 'PlayerComponent',
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 16,
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                hintText: 'PlayerComponent',
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+            DropdownMenu<ComponentType>(
+              label: const Text('Type'),
+              expandedInsets: EdgeInsets.zero,
+              initialSelection: _type,
+              requestFocusOnTap: false,
+              onSelected: (type) {
+                if (type != null) setState(() => _type = type);
+              },
+              dropdownMenuEntries: [
+                for (final type in ComponentType.values)
+                  DropdownMenuEntry(value: type, label: type.label),
+              ],
+            ),
+          ],
         ),
-        onSubmitted: (_) => _submit(),
       ),
       actions: [
         TextButton(

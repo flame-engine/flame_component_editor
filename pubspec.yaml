@@ -13,6 +13,8 @@ dependencies:
   equatable: ^3.0.0
   file_system_client:
     path: packages/file_system_client
+  flame: ^1.38.2
+  flex_color_picker: ^3.8.0
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
@@ -24,6 +26,7 @@ dependencies:
 dev_dependencies:
   bloc_lint: ^0.4.3
   bloc_test: ^10.0.0
+  flame_test: ^2.3.1
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.5

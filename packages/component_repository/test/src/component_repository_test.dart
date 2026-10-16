@@ -36,7 +36,10 @@ void main() {
 
         expect(
           await repository.getComponents(projectPath),
-          equals(const [Component(name: 'Enemy'), Component(name: 'Player')]),
+          equals(const [
+            RectangleComponent(name: 'Enemy'),
+            RectangleComponent(name: 'Player'),
+          ]),
         );
       });
 
@@ -50,7 +53,7 @@ void main() {
 
         expect(
           await repository.getComponents(projectPath),
-          equals(const [Component(name: 'Player')]),
+          equals(const [RectangleComponent(name: 'Player')]),
         );
       });
     });
@@ -62,13 +65,17 @@ void main() {
         when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
 
         expect(
-          await repository.createComponent(projectPath, 'Player'),
-          equals(const Component(name: 'Player')),
+          await repository.createComponent(
+            projectPath,
+            'Player',
+            ComponentType.rectangle,
+          ),
+          equals(const RectangleComponent(name: 'Player')),
         );
         verify(
           () => fileSystem.writeFile(
             fileOf('Player'),
-            jsonEncode({'name': 'Player'}),
+            jsonEncode(const RectangleComponent(name: 'Player').toJson()),
           ),
         ).called(1);
       });
@@ -76,7 +83,11 @@ void main() {
       for (final name in ['', '1Player', 'My Player', 'a/b', '../x']) {
         test('throws InvalidComponentNameException for "$name"', () {
           expect(
-            () => repository.createComponent(projectPath, name),
+            () => repository.createComponent(
+              projectPath,
+              name,
+              ComponentType.rectangle,
+            ),
             throwsA(isA<InvalidComponentNameException>()),
           );
         });
@@ -87,9 +98,32 @@ void main() {
             .thenAnswer((_) async => true);
 
         expect(
-          () => repository.createComponent(projectPath, 'Player'),
+          () => repository.createComponent(
+            projectPath,
+            'Player',
+            ComponentType.rectangle,
+          ),
           throwsA(isA<ComponentAlreadyExistsException>()),
         );
+      });
+    });
+
+    group('saveComponent', () {
+      test('writes the component file', () async {
+        when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
+        const component = RectangleComponent(
+          name: 'Player',
+          size: ComponentSize(width: 10, height: 20),
+        );
+
+        await repository.saveComponent(projectPath, component);
+
+        verify(
+          () => fileSystem.writeFile(
+            fileOf('Player'),
+            jsonEncode(component.toJson()),
+          ),
+        ).called(1);
       });
     });
 
@@ -99,7 +133,7 @@ void main() {
 
         await repository.deleteComponent(
           projectPath,
-          const Component(name: 'Player'),
+          const RectangleComponent(name: 'Player'),
         );
 
         verify(() => fileSystem.deleteFile(fileOf('Player'))).called(1);

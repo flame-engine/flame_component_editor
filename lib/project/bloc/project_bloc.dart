@@ -46,6 +46,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       final component = await _componentRepository.createComponent(
         _project.path,
         event.name,
+        event.type,
       );
       emit(
         state.copyWith(

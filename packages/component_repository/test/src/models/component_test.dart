@@ -3,17 +3,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group(Component, () {
-    test('supports value equality', () {
-      expect(
-        const Component(name: 'Player'),
-        equals(const Component(name: 'Player')),
-      );
+    group('create', () {
+      test('creates a rectangle with default properties', () {
+        expect(
+          Component.create('Player', ComponentType.rectangle),
+          equals(const RectangleComponent(name: 'Player')),
+        );
+      });
     });
 
-    test('round-trips through JSON', () {
-      const component = Component(name: 'Player');
+    group('fromJson', () {
+      test('reads a rectangle', () {
+        expect(
+          Component.fromJson(const {'name': 'Player', 'type': 'rectangle'}),
+          isA<RectangleComponent>(),
+        );
+      });
 
-      expect(Component.fromJson(component.toJson()), equals(component));
+      test('reads components without a type as rectangles', () {
+        expect(
+          Component.fromJson(const {'name': 'Player'}),
+          equals(const RectangleComponent(name: 'Player')),
+        );
+      });
     });
   });
 }
