@@ -40,7 +40,7 @@ class PropertiesPanel extends StatelessWidget {
                   bloc.state.component.validateChildName(
                     selectedPath,
                     name,
-                    takenClassNames: bloc.state.takenClassNames,
+                    takenClassNames: bloc.state.takenClassNames.keys.toSet(),
                   ),
                 ),
                 onChanged: (name) => bloc.add(ComponentEditorNameChanged(name)),

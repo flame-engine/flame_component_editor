@@ -162,6 +162,19 @@ void main() {
         ],
       );
 
+      test('conflictingComponent is cleared when the status changes', () {
+        const state = ProjectState(
+          status: ProjectStatus.classConflict,
+          conflictingComponent: 'player_ship',
+        );
+
+        expect(state.copyWith().conflictingComponent, equals('player_ship'));
+        expect(
+          state.copyWith(status: ProjectStatus.ready).conflictingComponent,
+          isNull,
+        );
+      });
+
       blocTest<ProjectBloc, ProjectState>(
         'emits failure when creating fails',
         setUp: () => when(

@@ -93,6 +93,10 @@ extension ComponentTree on Component {
     }
   }
 
+  /// The name of the class generated for this component as the root of its
+  /// tree, such as `$PlayerShip`.
+  String get generatedClassName => dartRootClassName(name);
+
   /// The names of the classes this component reserves in the generated
   /// code: the class of the root, and the class of every child.
   ///
@@ -103,7 +107,7 @@ extension ComponentTree on Component {
   /// names, or a library importing both wouldn't compile.
   Set<String> get generatedClassNames {
     return {
-      dartRootClassName(name),
+      generatedClassName,
       for (final node in nodes.skip(1)) dartChildClassName(name, node.name),
     };
   }

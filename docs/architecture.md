@@ -261,16 +261,25 @@ editor loads the other components' classes on `ComponentEditorStarted`
 (`ComponentEditorState.takenClassNames`), and both `validateChildName`
 (`ChildNameError.conflict`) and `uniqueChildName` take them into account.
 Saving reloads the other components and checks the whole tree again
-(catching names typed before they loaded, and clashes that already
-existed): on a clash the JSON is saved but the code is not generated
-(`classConflict` status, the snackbar lists
-`ComponentEditorState.conflictingClassNames`).
+(catching names typed before they loaded). **A component whose classes
+clash is not saved at all** (`classConflict` status; the changes stay
+pending): its code wouldn't compile, and its JSON would reserve classes
+that other components own. Clashes that already existed (e.g. `AB` and
+`a_b` created before this check) are reported when the editor opens.
+`takenClassNames` maps every class to the component that generates it, so
+the snackbar says how to fix each clash: rename the clashing children; or,
+when the root class clashes (`ComponentEditorState.rootClassOwner`), rename
+the child of the other component that generates it, or delete one of the
+two components if both roots generate it (components can't be renamed).
 
-Whenever a save stores the JSON but not the code (`codeConflict`,
-`classConflict`, `codeFailure`), the state keeps `isCodeOutdated` until the
-code is generated, and `canSave` lets the user save again without changes
-(e.g. after renaming the *other* component, or moving a hand-written file
-out of the way).
+`isCodeOutdated` is true when the generated code doesn't match the saved
+component: `ComponentEditorStarted` checks it with
+`ComponentRepository.isComponentCodeUpToDate` (missing, stale or
+hand-written file), and saves that don't generate the code (`codeConflict`,
+`codeFailure`) set it. `canSave` then lets the user save without changes,
+e.g. after deleting the other component or moving a hand-written file out
+of the way. Save states are built from the current state, so edits made
+while saving are kept.
 
 ## Domain sketch (expected, not yet built)
 

@@ -77,37 +77,118 @@ void main() {
       ],
     );
 
+    test('rootClassOwner is the other component generating the root '
+        'class', () {
+      const aB = RectangleComponent(name: 'a_b');
+      const aBHead = RectangleComponent(name: 'a_b_head');
+      const state = ComponentEditorState(
+        component: RectangleComponent(
+          name: 'AB',
+          children: [RectangleComponent(name: 'head')],
+        ),
+        savedComponent: component,
+        takenClassNames: {r'$AB': aB, r'$ABHead': aBHead, r'$X': aB},
+      );
+
+      expect(state.rootClassOwner, equals(aB));
+      expect(
+        state.conflictingClassNames,
+        equals({r'$AB': aB, r'$ABHead': aBHead}),
+      );
+    });
+
     group(ComponentEditorStarted, () {
+      const enemy = RectangleComponent(name: 'Enemy');
+      const ship = RectangleComponent(
+        name: 'Ship',
+        children: [RectangleComponent(name: 'wing')],
+      );
+
+      void stubComponents(List<Component> components) {
+        when(() => componentRepository.getComponents(project.path))
+            .thenAnswer((_) async => components);
+      }
+
+      void stubUpToDate({required bool isUpToDate}) {
+        when(
+          () => componentRepository.isComponentCodeUpToDate(
+            project.path,
+            'lib/game',
+            component,
+          ),
+        ).thenAnswer((_) async => isUpToDate);
+      }
+
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'loads the classes of the other components',
-        setUp: () =>
-            when(() => componentRepository.getComponents(project.path))
-                .thenAnswer(
-                  (_) async => const [
-                    RectangleComponent(name: 'Enemy'),
-                    component,
-                    RectangleComponent(
-                      name: 'Ship',
-                      children: [RectangleComponent(name: 'wing')],
-                    ),
-                  ],
-                ),
+        setUp: () {
+          stubComponents(const [enemy, component, ship]);
+          stubUpToDate(isUpToDate: true);
+        },
         build: buildBloc,
         act: (bloc) => bloc.add(const ComponentEditorStarted()),
         expect: () => const [
           ComponentEditorState(
             component: component,
             savedComponent: component,
-            takenClassNames: {r'$Enemy', r'$Ship', r'$ShipWing'},
+            takenClassNames: {
+              r'$Enemy': enemy,
+              r'$Ship': ship,
+              r'$ShipWing': ship,
+            },
           ),
         ],
       );
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
-        'emits nothing when the components cannot be loaded',
-        setUp: () =>
-            when(() => componentRepository.getComponents(project.path))
-                .thenThrow(Exception()),
+        'reports clashes that already exist',
+        setUp: () {
+          stubComponents(const [RectangleComponent(name: 'player_')]);
+          stubUpToDate(isUpToDate: true);
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        skip: 1,
+        expect: () => [
+          isA<ComponentEditorState>()
+              .having(
+                (s) => s.status,
+                'status',
+                ComponentEditorStatus.classConflict,
+              )
+              .having(
+                (s) => s.rootClassOwner?.name,
+                'rootClassOwner',
+                'player_',
+              ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'marks missing or outdated code, so it can be saved without changes',
+        setUp: () {
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: false);
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        // The other components are loaded first.
+        skip: 1,
+        expect: () => [
+          isA<ComponentEditorState>()
+              .having((s) => s.isCodeOutdated, 'isCodeOutdated', isTrue)
+              .having((s) => s.canSave, 'canSave', isTrue),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'emits nothing when nothing can be loaded',
+        setUp: () {
+          when(() => componentRepository.getComponents(project.path))
+              .thenThrow(Exception());
+          when(() => projectRepository.getSettings(project))
+              .thenThrow(Exception());
+        },
         build: buildBloc,
         act: (bloc) => bloc.add(const ComponentEditorStarted()),
         expect: () => const <ComponentEditorState>[],
@@ -181,7 +262,9 @@ void main() {
         seed: () => const ComponentEditorState(
           component: component,
           savedComponent: component,
-          takenClassNames: {r'$PlayerRectangle1'},
+          takenClassNames: {
+            r'$PlayerRectangle1': RectangleComponent(name: 'player_rectangle1'),
+          },
         ),
         act: (bloc) =>
             bloc.add(const ComponentEditorChildAdded(ComponentType.rectangle)),
@@ -254,6 +337,8 @@ void main() {
     });
 
     group(ComponentEditorSaveRequested, () {
+      const playerHead = RectangleComponent(name: 'player_head');
+
       setUp(
         () =>
             when(() => componentRepository.getComponents(project.path))
@@ -349,19 +434,11 @@ void main() {
       }
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
-        'emits classConflict, with the changes saved, and does not generate '
-        'the code when another component generates one of its classes',
-        setUp: () {
-          when(() => componentRepository.saveComponent(project.path, any()))
-              .thenAnswer((_) async {});
-          when(() => componentRepository.getComponents(project.path))
-              .thenAnswer(
-                (_) async => const [
-                  component,
-                  RectangleComponent(name: 'player_head'),
-                ],
-              );
-        },
+        'emits classConflict, and saves nothing, when another component '
+        'generates one of its classes',
+        setUp: () =>
+            when(() => componentRepository.getComponents(project.path))
+                .thenAnswer((_) async => const [component, playerHead]),
         build: buildBloc,
         // The other components were not loaded when the child was named.
         seed: () => const ComponentEditorState(
@@ -380,16 +457,75 @@ void main() {
                 'status',
                 ComponentEditorStatus.classConflict,
               )
-              .having((s) => s.hasChanges, 'hasChanges', isFalse)
-              .having((s) => s.isCodeOutdated, 'isCodeOutdated', isTrue)
+              .having((s) => s.hasChanges, 'hasChanges', isTrue)
               .having((s) => s.canSave, 'canSave', isTrue)
               .having((s) => s.conflictingClassNames, 'conflictingClassNames', {
-                r'$PlayerHead',
-              }),
+                r'$PlayerHead': playerHead,
+              })
+              .having((s) => s.rootClassOwner, 'rootClassOwner', isNull),
         ],
-        verify: (_) => verifyNever(
-          () => componentRepository.writeComponentCode(any(), any(), any()),
+        verify: (_) {
+          verifyNever(() => componentRepository.saveComponent(any(), any()));
+          verifyNever(
+            () => componentRepository.writeComponentCode(any(), any(), any()),
+          );
+        },
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'emits failure when the other components cannot be loaded',
+        setUp: () =>
+            when(() => componentRepository.getComponents(project.path))
+                .thenThrow(Exception()),
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: edited,
+          savedComponent: component,
         ),
+        act: (bloc) => bloc.add(const ComponentEditorSaveRequested()),
+        skip: 1,
+        expect: () => const [
+          ComponentEditorState(
+            status: ComponentEditorStatus.failure,
+            component: edited,
+            savedComponent: component,
+          ),
+        ],
+        verify: (_) =>
+            verifyNever(() => componentRepository.saveComponent(any(), any())),
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'keeps edits made while saving',
+        setUp: () {
+          stubSave();
+          stubCode((_) async {});
+        },
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: edited,
+          savedComponent: component,
+        ),
+        act: (bloc) => bloc
+          ..add(const ComponentEditorSaveRequested())
+          ..add(const ComponentEditorPaintChanged(paint)),
+        wait: Duration.zero,
+        skip: 2,
+        expect: () => [
+          isA<ComponentEditorState>()
+              .having((s) => s.status, 'status', ComponentEditorStatus.saved)
+              .having((s) => s.savedComponent, 'savedComponent', edited)
+              .having(
+                (s) => s.component,
+                'component',
+                const RectangleComponent(
+                  name: 'Player',
+                  size: size,
+                  paint: paint,
+                ),
+              )
+              .having((s) => s.hasChanges, 'hasChanges', isTrue),
+        ],
       );
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
@@ -518,7 +654,9 @@ void main() {
           component: named,
           savedComponent: named,
           selectedPath: [1],
-          takenClassNames: {r'$PlayerHead'},
+          takenClassNames: {
+            r'$PlayerHead': RectangleComponent(name: 'player_head'),
+          },
         ),
         act: (bloc) => bloc.add(const ComponentEditorNameChanged('head')),
         expect: () => const <ComponentEditorState>[],

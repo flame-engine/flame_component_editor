@@ -247,6 +247,47 @@ void main() {
       });
     });
 
+    group('isComponentCodeUpToDate', () {
+      const component = RectangleComponent(name: 'PlayerShip');
+      const generator = ComponentCodeGenerator();
+      final codeFile = p.join(
+        projectPath,
+        'lib/components',
+        'player_ship.generated.dart',
+      );
+
+      Future<bool> isUpToDate() => repository.isComponentCodeUpToDate(
+        projectPath,
+        'lib/components',
+        component,
+      );
+
+      test('is false without generated code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => false);
+
+        expect(await isUpToDate(), isFalse);
+      });
+
+      test('is true when the file holds the current code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => generator.generate(component));
+
+        expect(await isUpToDate(), isTrue);
+      });
+
+      test('is false when the file holds other code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => '// hand-written');
+
+        expect(await isUpToDate(), isFalse);
+      });
+    });
+
     group('deleteComponent', () {
       const component = RectangleComponent(name: 'Player');
       final codeFile = p.join(projectPath, 'lib/game', 'player.generated.dart');

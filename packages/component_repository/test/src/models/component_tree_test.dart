@@ -93,6 +93,10 @@ void main() {
       );
     });
 
+    test('generatedClassName is the class of the root', () {
+      expect(tree.generatedClassName, equals(r'$Player'));
+    });
+
     test('generatedClassNames reserves a class for the root and every '
         'child', () {
       expect(

@@ -50,7 +50,8 @@ final class ProjectState extends Equatable {
   final Component? createdComponent;
 
   /// The name of the component that already generates the class of the
-  /// last rejected name, when the status is [ProjectStatus.classConflict].
+  /// last rejected name. Only set while the status is
+  /// [ProjectStatus.classConflict].
   final String? conflictingComponent;
 
   /// Returns a copy of this state with the given fields replaced.
@@ -64,7 +65,10 @@ final class ProjectState extends Equatable {
       status: status ?? this.status,
       components: components ?? this.components,
       createdComponent: createdComponent ?? this.createdComponent,
-      conflictingComponent: conflictingComponent ?? this.conflictingComponent,
+      conflictingComponent:
+          (status ?? this.status) == ProjectStatus.classConflict
+          ? conflictingComponent ?? this.conflictingComponent
+          : null,
     );
   }
 
