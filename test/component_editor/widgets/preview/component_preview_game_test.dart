@@ -35,7 +35,7 @@ void main() {
         await game.ready();
         final preview = game.preview;
 
-        await game.show(
+        game.show(
           component.copyWithSize(const ComponentSize(width: 30, height: 40)),
         );
 
@@ -75,7 +75,7 @@ void main() {
           await game.ready();
           final preview = game.preview;
 
-          await game.show(
+          game.show(
             component.copyWithChildren([
               child.copyWithPosition(const ComponentPosition(x: -3)),
             ]),
@@ -96,7 +96,7 @@ void main() {
           await game.ready();
           final preview = game.preview;
 
-          await game.show(tree);
+          game.show(tree);
           await game.ready();
 
           expect(game.preview, isNot(same(preview)));
@@ -133,17 +133,16 @@ void main() {
         await game.ready();
         expect(game.preview.position, equals(flame.Vector2.zero()));
 
-        await game.show(
+        game.show(
           component.copyWithPosition(const ComponentPosition(x: 7, y: 8)),
         );
         expect(game.preview.position, equals(flame.Vector2.zero()));
       },
     );
 
-    test('show before loading keeps the component for later', () async {
-      final game = ComponentPreviewGame(component: component);
-
-      await game.show(component.copyWithSize(const ComponentSize(width: 1)));
+    test('show before loading keeps the component for later', () {
+      final game = ComponentPreviewGame(component: component)
+        ..show(component.copyWithSize(const ComponentSize(width: 1)));
 
       expect(game.isLoaded, isFalse);
     });

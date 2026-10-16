@@ -7,12 +7,14 @@ environment:
   sdk: ^3.13.4
 
 dependencies:
+  dart_style: ^3.1.14
   equatable: ^3.0.0
   file_system_client:
     path: ../file_system_client
   flutter:
     sdk: flutter
   path: ^1.9.0
+  pub_semver: ^2.2.1
 
 dev_dependencies:
   flutter_test:

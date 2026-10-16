@@ -60,8 +60,8 @@ void main() {
 
     group('createComponent', () {
       test('writes the component file and returns the component', () async {
-        when(() => fileSystem.fileExists(fileOf('Player')))
-            .thenAnswer((_) async => false);
+        when(() => fileSystem.listFiles(directory, extension: '.json'))
+            .thenAnswer((_) async => [fileOf('Enemy')]);
         when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
 
         expect(
@@ -80,7 +80,15 @@ void main() {
         ).called(1);
       });
 
-      for (final name in ['', '1Player', 'My Player', 'a/b', '../x']) {
+      for (final name in [
+        '',
+        '1Player',
+        'My Player',
+        'a/b',
+        '../x',
+        '_',
+        '_1',
+      ]) {
         test('throws InvalidComponentNameException for "$name"', () {
           expect(
             () => repository.createComponent(
@@ -93,19 +101,22 @@ void main() {
         });
       }
 
-      test('throws ComponentAlreadyExistsException when it exists', () {
-        when(() => fileSystem.fileExists(fileOf('Player')))
-            .thenAnswer((_) async => true);
+      for (final name in ['Player', 'player', 'PLAYER']) {
+        test('throws ComponentAlreadyExistsException for "$name" '
+            'when Player exists', () {
+          when(() => fileSystem.listFiles(directory, extension: '.json'))
+              .thenAnswer((_) async => [fileOf('Player')]);
 
-        expect(
-          () => repository.createComponent(
-            projectPath,
-            'Player',
-            ComponentType.rectangle,
-          ),
-          throwsA(isA<ComponentAlreadyExistsException>()),
-        );
-      });
+          expect(
+            () => repository.createComponent(
+              projectPath,
+              name,
+              ComponentType.rectangle,
+            ),
+            throwsA(isA<ComponentAlreadyExistsException>()),
+          );
+        });
+      }
     });
 
     group('saveComponent', () {
@@ -127,16 +138,121 @@ void main() {
       });
     });
 
-    group('deleteComponent', () {
-      test('deletes the component file', () async {
-        when(() => fileSystem.deleteFile(any())).thenAnswer((_) async {});
+    group('writeComponentCode', () {
+      const component = RectangleComponent(name: 'PlayerShip');
+      const generator = ComponentCodeGenerator();
+      final codeFile = p.join(
+        projectPath,
+        'lib/components',
+        'player_ship.generated.dart',
+      );
 
-        await repository.deleteComponent(
+      setUp(() {
+        when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
+      });
+
+      test('writes the generated code to the output folder', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => false);
+
+        await repository.writeComponentCode(
           projectPath,
-          const RectangleComponent(name: 'Player'),
+          'lib/components',
+          component,
         );
 
+        verify(
+          () => fileSystem.writeFile(codeFile, generator.generate(component)),
+        ).called(1);
+      });
+
+      test('replaces previously generated code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => '${ComponentCodeGenerator.header}\n');
+
+        await repository.writeComponentCode(
+          projectPath,
+          'lib/components',
+          component,
+        );
+
+        verify(
+          () => fileSystem.writeFile(codeFile, generator.generate(component)),
+        ).called(1);
+      });
+
+      test('throws GeneratedFileConflictException and keeps a file that was '
+          'not generated', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => 'class PlayerShip {}');
+
+        await expectLater(
+          repository.writeComponentCode(
+            projectPath,
+            'lib/components',
+            component,
+          ),
+          throwsA(
+            isA<GeneratedFileConflictException>().having(
+              (e) => e.path,
+              'path',
+              codeFile,
+            ),
+          ),
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+    });
+
+    group('deleteComponent', () {
+      const component = RectangleComponent(name: 'Player');
+      final codeFile = p.join(projectPath, 'lib/game', 'player.generated.dart');
+
+      setUp(() {
+        when(() => fileSystem.deleteFile(any())).thenAnswer((_) async {});
+      });
+
+      Future<void> delete() => repository.deleteComponent(
+        projectPath,
+        component,
+        outputPath: 'lib/game',
+      );
+
+      test('deletes the component file and its generated code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => '${ComponentCodeGenerator.header}\n');
+
+        await delete();
+
         verify(() => fileSystem.deleteFile(fileOf('Player'))).called(1);
+        verify(() => fileSystem.deleteFile(codeFile)).called(1);
+      });
+
+      test('works when there is no generated code', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => false);
+
+        await delete();
+
+        verify(() => fileSystem.deleteFile(fileOf('Player'))).called(1);
+        verifyNever(() => fileSystem.deleteFile(codeFile));
+      });
+
+      test('keeps a file that was not generated', () async {
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(codeFile))
+            .thenAnswer((_) async => 'class Player {}');
+
+        await delete();
+
+        verifyNever(() => fileSystem.deleteFile(codeFile));
       });
     });
   });

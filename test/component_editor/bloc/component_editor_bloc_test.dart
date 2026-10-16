@@ -7,6 +7,8 @@ import 'package:project_repository/project_repository.dart';
 
 class _MockComponentRepository extends Mock implements ComponentRepository;
 
+class _MockProjectRepository extends Mock implements ProjectRepository;
+
 void main() {
   setUpAll(
     () => registerFallbackValue(const RectangleComponent(name: 'Fallback')),
@@ -20,15 +22,21 @@ void main() {
     const edited = RectangleComponent(name: 'Player', size: size);
 
     late ComponentRepository componentRepository;
+    late ProjectRepository projectRepository;
 
     setUp(() {
       componentRepository = _MockComponentRepository();
+      projectRepository = _MockProjectRepository();
+      when(
+        () => projectRepository.getSettings(project),
+      ).thenAnswer((_) async => const ProjectSettings(outputPath: 'lib/game'));
     });
 
     ComponentEditorBloc buildBloc() => ComponentEditorBloc(
       project: project,
       component: component,
       componentRepository: componentRepository,
+      projectRepository: projectRepository,
     );
 
     test('initial state has no changes', () {
@@ -190,11 +198,27 @@ void main() {
     });
 
     group(ComponentEditorSaveRequested, () {
+      void stubSave() {
+        when(() => componentRepository.saveComponent(project.path, edited))
+            .thenAnswer((_) async {});
+      }
+
+      void stubCode(Future<void> Function(Invocation) answer) {
+        when(
+          () => componentRepository.writeComponentCode(
+            project.path,
+            'lib/game',
+            edited,
+          ),
+        ).thenAnswer(answer);
+      }
+
       blocTest<ComponentEditorBloc, ComponentEditorState>(
-        'saves the component and clears the changes',
-        setUp: () =>
-            when(() => componentRepository.saveComponent(project.path, edited))
-                .thenAnswer((_) async {}),
+        'saves the component, generates its code and clears the changes',
+        setUp: () {
+          stubSave();
+          stubCode((_) async {});
+        },
         build: buildBloc,
         seed: () => const ComponentEditorState(
           component: edited,
@@ -213,10 +237,53 @@ void main() {
             savedComponent: edited,
           ),
         ],
-        verify: (_) => verify(
-          () => componentRepository.saveComponent(project.path, edited),
-        ).called(1),
+        verify: (_) {
+          verify(() => componentRepository.saveComponent(project.path, edited))
+              .called(1);
+          verify(
+            () => componentRepository.writeComponentCode(
+              project.path,
+              'lib/game',
+              edited,
+            ),
+          ).called(1);
+        },
       );
+
+      for (final (exception, status) in [
+        (
+          const GeneratedFileConflictException('/projects/my_game/x.dart'),
+          ComponentEditorStatus.codeConflict,
+        ),
+        (Exception(), ComponentEditorStatus.codeFailure),
+      ]) {
+        blocTest<ComponentEditorBloc, ComponentEditorState>(
+          'emits $status, with the changes saved, when generating the code '
+          'throws ${exception.runtimeType}',
+          setUp: () {
+            stubSave();
+            stubCode((_) async => throw exception);
+          },
+          build: buildBloc,
+          seed: () => const ComponentEditorState(
+            component: edited,
+            savedComponent: component,
+          ),
+          act: (bloc) => bloc.add(const ComponentEditorSaveRequested()),
+          expect: () => [
+            const ComponentEditorState(
+              status: ComponentEditorStatus.saving,
+              component: edited,
+              savedComponent: component,
+            ),
+            ComponentEditorState(
+              status: status,
+              component: edited,
+              savedComponent: edited,
+            ),
+          ],
+        );
+      }
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'emits failure when saving fails',
@@ -250,6 +317,57 @@ void main() {
         expect: () => const <ComponentEditorState>[],
         verify: (_) =>
             verifyNever(() => componentRepository.saveComponent(any(), any())),
+      );
+    });
+
+    group(ComponentEditorNameChanged, () {
+      const named = RectangleComponent(
+        name: 'Player',
+        children: [
+          RectangleComponent(name: 'rectangle1'),
+          RectangleComponent(name: 'rectangle2'),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'renames the selected child',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: named,
+          savedComponent: named,
+          selectedPath: [1],
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorNameChanged('head')),
+        expect: () => [
+          isA<ComponentEditorState>().having(
+            (s) => s.component.nodeAt(const [1]).name,
+            'name',
+            'head',
+          ),
+        ],
+      );
+
+      for (final name in ['rectangle1', 'size', '1head']) {
+        blocTest<ComponentEditorBloc, ComponentEditorState>(
+          'ignores the rejected name "$name"',
+          build: buildBloc,
+          seed: () => const ComponentEditorState(
+            component: named,
+            savedComponent: named,
+            selectedPath: [1],
+          ),
+          act: (bloc) => bloc.add(ComponentEditorNameChanged(name)),
+          expect: () => const <ComponentEditorState>[],
+        );
+      }
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'does not rename the root',
+        build: buildBloc,
+        seed: () =>
+            const ComponentEditorState(component: named, savedComponent: named),
+        act: (bloc) => bloc.add(const ComponentEditorNameChanged('Enemy')),
+        expect: () => const <ComponentEditorState>[],
       );
     });
   });

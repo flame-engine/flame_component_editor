@@ -9,8 +9,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// component tree.
 ///
 /// Editors are picked from the capabilities the node implements, so a new
-/// component type gets them without changes here. The position is only
-/// edited on children: the root is placed by whoever uses it.
+/// component type gets them without changes here. The name and the
+/// position are only edited on children: the root name is its file and
+/// class name, and the root is placed by whoever uses it.
 /// {@endtemplate}
 class PropertiesPanel extends StatelessWidget {
   /// {@macro properties_panel}
@@ -29,6 +30,19 @@ class PropertiesPanel extends StatelessWidget {
       // Fresh fields for every node, so edits never leak between nodes.
       key: ValueKey(selectedPath.join('.')),
       children: [
+        if (!isRoot)
+          PropertySection(
+            title: 'Name',
+            children: [
+              NameField(
+                value: component.name,
+                validator: (name) => _nameError(
+                  bloc.state.component.validateChildName(selectedPath, name),
+                ),
+                onChanged: (name) => bloc.add(ComponentEditorNameChanged(name)),
+              ),
+            ],
+          ),
         if (component case final PositionedComponent positioned when !isRoot)
           PositionEditor(
             value: positioned.position,
@@ -47,5 +61,17 @@ class PropertiesPanel extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  static String? _nameError(ChildNameError? error) {
+    return switch (error) {
+      null => null,
+      ChildNameError.invalid =>
+        'Use a valid Dart identifier: letters, digits and underscores, '
+            'not starting with a digit, and not a keyword',
+      ChildNameError.reserved =>
+        'Already a member of the parent component in Flame',
+      ChildNameError.duplicate => 'Another component already uses this name',
+    };
   }
 }

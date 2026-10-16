@@ -72,5 +72,57 @@ void main() {
         equals('rectangle1'),
       );
     });
+
+    test('uniqueChildName ignores names that generate the same getter', () {
+      expect(
+        const RectangleComponent(
+          name: 'Player',
+          children: [RectangleComponent(name: 'Rectangle1')],
+        ).uniqueChildName(ComponentType.rectangle),
+        equals('rectangle2'),
+      );
+    });
+
+    group('validateChildName', () {
+      test('accepts a free name, and the current name of the node', () {
+        expect(tree.validateChildName(const [0], 'head'), isNull);
+        expect(tree.validateChildName(const [0], 'rectangle1'), isNull);
+        expect(tree.validateChildName(const [0, 0], 'left_arm'), isNull);
+      });
+
+      for (final name in ['', '1head', 'my head', 'class', '_', 'a-b']) {
+        test('rejects "$name" as invalid', () {
+          expect(
+            tree.validateChildName(const [0], name),
+            equals(ChildNameError.invalid),
+          );
+        });
+      }
+
+      for (final name in ['size', 'Position', 'paint', 'children', 'parent']) {
+        test('rejects "$name" as reserved', () {
+          expect(
+            tree.validateChildName(const [0], name),
+            equals(ChildNameError.reserved),
+          );
+        });
+      }
+
+      for (final name in ['rectangle2', 'Rectangle3', 'player']) {
+        test('rejects "$name" as duplicate', () {
+          expect(
+            tree.validateChildName(const [0], name),
+            equals(ChildNameError.duplicate),
+          );
+        });
+      }
+
+      test('throws for the root', () {
+        expect(
+          () => tree.validateChildName(const [], 'head'),
+          throwsArgumentError,
+        );
+      });
+    });
   });
 }

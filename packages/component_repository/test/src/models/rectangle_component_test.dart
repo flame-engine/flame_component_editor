@@ -89,6 +89,16 @@ void main() {
       );
     });
 
+    test('copyWithName replaces only the name', () {
+      final copy = component.copyWithName('Enemy');
+
+      expect(copy.name, equals('Enemy'));
+      expect(
+        copy.toJson()..remove('name'),
+        equals(component.toJson()..remove('name')),
+      );
+    });
+
     test('copyWithChildren replaces only the children', () {
       final copy = component.copyWithChildren(const []);
 

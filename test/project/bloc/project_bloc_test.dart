@@ -7,6 +7,8 @@ import 'package:project_repository/project_repository.dart';
 
 class _MockComponentRepository extends Mock implements ComponentRepository;
 
+class _MockProjectRepository extends Mock implements ProjectRepository;
+
 void main() {
   group(ProjectBloc, () {
     const project = Project(path: '/projects/my_game');
@@ -14,13 +16,21 @@ void main() {
     const enemy = RectangleComponent(name: 'Enemy');
 
     late ComponentRepository componentRepository;
+    late ProjectRepository projectRepository;
 
     setUp(() {
       componentRepository = _MockComponentRepository();
+      projectRepository = _MockProjectRepository();
+      when(
+        () => projectRepository.getSettings(project),
+      ).thenAnswer((_) async => const ProjectSettings(outputPath: 'lib/game'));
     });
 
-    ProjectBloc buildBloc() =>
-        ProjectBloc(project: project, componentRepository: componentRepository);
+    ProjectBloc buildBloc() => ProjectBloc(
+      project: project,
+      componentRepository: componentRepository,
+      projectRepository: projectRepository,
+    );
 
     test('initial state is ProjectState', () {
       expect(buildBloc().state, equals(const ProjectState()));
@@ -144,10 +154,16 @@ void main() {
 
     group(ProjectComponentDeleteRequested, () {
       blocTest<ProjectBloc, ProjectState>(
-        'deletes the component and emits the reloaded components',
+        'deletes the component and its code and emits the reloaded '
+        'components',
         setUp: () {
-          when(() => componentRepository.deleteComponent(project.path, player))
-              .thenAnswer((_) async {});
+          when(
+            () => componentRepository.deleteComponent(
+              project.path,
+              player,
+              outputPath: 'lib/game',
+            ),
+          ).thenAnswer((_) async {});
           when(() => componentRepository.getComponents(project.path))
               .thenAnswer((_) async => [enemy]);
         },
@@ -161,14 +177,22 @@ void main() {
           ProjectState(status: ProjectStatus.ready, components: [enemy]),
         ],
         verify: (_) => verify(
-          () => componentRepository.deleteComponent(project.path, player),
+          () => componentRepository.deleteComponent(
+            project.path,
+            player,
+            outputPath: 'lib/game',
+          ),
         ).called(1),
       );
 
       blocTest<ProjectBloc, ProjectState>(
         'emits failure when deleting fails',
         setUp: () => when(
-          () => componentRepository.deleteComponent(project.path, player),
+          () => componentRepository.deleteComponent(
+            project.path,
+            player,
+            outputPath: 'lib/game',
+          ),
         ).thenThrow(Exception()),
         build: buildBloc,
         act: (bloc) => bloc.add(const ProjectComponentDeleteRequested(player)),

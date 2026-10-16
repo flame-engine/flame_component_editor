@@ -54,18 +54,22 @@ final class RectangleComponent extends Component
   }
 
   @override
+  RectangleComponent copyWithName(String name) => _copyWith(name: name);
+
+  @override
   RectangleComponent copyWithChildren(List<Component> children) {
     return _copyWith(children: children);
   }
 
   RectangleComponent _copyWith({
+    String? name,
     ComponentPosition? position,
     ComponentSize? size,
     ComponentPaint? paint,
     List<Component>? children,
   }) {
     return RectangleComponent(
-      name: name,
+      name: name ?? this.name,
       position: position ?? this.position,
       size: size ?? this.size,
       paint: paint ?? this.paint,

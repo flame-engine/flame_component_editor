@@ -8,11 +8,16 @@ part 'project_state.dart';
 
 /// {@template project_bloc}
 /// Lists, creates and deletes the components of an open [Project].
+///
+/// Deleting a component also deletes its generated code.
 /// {@endtemplate}
 class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
   /// {@macro project_bloc}
-  new({required this._project, required this._componentRepository})
-    : super(const ProjectState()) {
+  new({
+    required this._project,
+    required this._componentRepository,
+    required this._projectRepository,
+  }) : super(const ProjectState()) {
     on<ProjectComponentsRequested>(_onComponentsRequested);
     on<ProjectComponentCreateRequested>(_onComponentCreateRequested);
     on<ProjectComponentDeleteRequested>(_onComponentDeleteRequested);
@@ -20,6 +25,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
 
   final Project _project;
   final ComponentRepository _componentRepository;
+  final ProjectRepository _projectRepository;
 
   Future<void> _onComponentsRequested(
     ProjectComponentsRequested event,
@@ -69,9 +75,11 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
     Emitter<ProjectState> emit,
   ) async {
     try {
+      final settings = await _projectRepository.getSettings(_project);
       await _componentRepository.deleteComponent(
         _project.path,
         event.component,
+        outputPath: settings.outputPath,
       );
       emit(
         state.copyWith(

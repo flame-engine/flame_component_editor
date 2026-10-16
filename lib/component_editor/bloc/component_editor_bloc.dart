@@ -10,6 +10,9 @@ part 'component_editor_state.dart';
 /// Edits a [Component] of a [Project], including the tree of components
 /// inside it, and saves it.
 ///
+/// Saving also generates the Dart code of the component in the output
+/// folder of the project settings.
+///
 /// Property events edit the selected node of the tree (the root by
 /// default). They are handled through the capability interfaces
 /// ([PositionedComponent], [SizedComponent], [PaintedComponent], ...), so
@@ -22,12 +25,14 @@ class ComponentEditorBloc
     required this._project,
     required Component component,
     required this._componentRepository,
+    required this._projectRepository,
   }) : super(
          ComponentEditorState(component: component, savedComponent: component),
        ) {
     on<ComponentEditorNodeSelected>(_onNodeSelected);
     on<ComponentEditorChildAdded>(_onChildAdded);
     on<ComponentEditorNodeRemoved>(_onNodeRemoved);
+    on<ComponentEditorNameChanged>(_onNameChanged);
     on<ComponentEditorPositionChanged>(_onPositionChanged);
     on<ComponentEditorSizeChanged>(_onSizeChanged);
     on<ComponentEditorPaintChanged>(_onPaintChanged);
@@ -36,6 +41,7 @@ class ComponentEditorBloc
 
   final Project _project;
   final ComponentRepository _componentRepository;
+  final ProjectRepository _projectRepository;
 
   void _onNodeSelected(
     ComponentEditorNodeSelected event,
@@ -80,6 +86,16 @@ class ComponentEditorBloc
         selectedPath: path.sublist(0, path.length - 1),
       ),
     );
+  }
+
+  void _onNameChanged(
+    ComponentEditorNameChanged event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    final path = state.selectedPath;
+    if (path.isEmpty) return;
+    if (state.component.validateChildName(path, event.name) != null) return;
+    _editSelected(emit, (node) => node.copyWithName(event.name));
   }
 
   void _onPositionChanged(
@@ -139,14 +155,25 @@ class ComponentEditorBloc
     emit(state.copyWith(status: ComponentEditorStatus.saving));
     try {
       await _componentRepository.saveComponent(_project.path, component);
-      emit(
-        state.copyWith(
-          status: ComponentEditorStatus.saved,
-          savedComponent: component,
-        ),
-      );
     } on Exception {
       emit(state.copyWith(status: ComponentEditorStatus.failure));
+      return;
+    }
+
+    // The component is saved even if its code can't be generated.
+    final saved = state.copyWith(savedComponent: component);
+    try {
+      final settings = await _projectRepository.getSettings(_project);
+      await _componentRepository.writeComponentCode(
+        _project.path,
+        settings.outputPath,
+        component,
+      );
+      emit(saved.copyWith(status: ComponentEditorStatus.saved));
+    } on GeneratedFileConflictException {
+      emit(saved.copyWith(status: ComponentEditorStatus.codeConflict));
+    } on Exception {
+      emit(saved.copyWith(status: ComponentEditorStatus.codeFailure));
     }
   }
 }

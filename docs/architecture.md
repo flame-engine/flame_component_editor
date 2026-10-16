@@ -129,10 +129,10 @@ dependencies:
 | Data | `packages/key_value_storage_client` | Generic string key-value storage (`shared_preferences`) |
 | Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory/file existence, list/read/write/delete files |
 | Repository | `packages/project_repository` | `Project` and `ProjectSettings` models; pick/open projects; last 10 recent projects; read/write project settings (`<project>/.flame_editor/settings.json`) and pick a project-relative output folder |
-| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`), capability interfaces and the `ComponentTree` extension for nested children; list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`) |
+| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`), capability interfaces and the `ComponentTree` extension for nested children (including child name validation); list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`); `ComponentCodeGenerator` and writing/deleting the generated Dart code (see "Code generation") |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
-| Bloc + view | `lib/project/` | Project dashboard: lists components, add (name + type dialog → editor), edit, delete (with confirmation), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
-| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: component tree (left, add/remove children, root selected by default), Flame preview (center), properties panel for the selected node (right), save button + Cmd/Ctrl+S, unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
+| Bloc + view | `lib/project/` | Project dashboard: lists components, add (name + type dialog → editor), edit, delete (with confirmation; also deletes the generated code), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
+| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: component tree (left, add/remove children, root selected by default), Flame preview (center), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
 | Bloc + view | `lib/project_settings/` | Project settings dialog, `ProjectSettingsDialog.show(context, project)`: output path for generated Dart code (default `lib/components`, text field + Browse) |
 
 `project_repository` and `component_repository` have no Flutter imports, but
@@ -157,18 +157,23 @@ component types only declare which ones they have:
 | Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `SizeEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
 | Panel wiring | `lib/component_editor/widgets/properties_panel.dart` | `if (component case SizedComponent c) SizeEditor(...)` |
 | Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applySize`, `applyPaint`, `buildFlameComponent` |
+| Code generation | `component_repository/lib/src/code_generation/` | `ComponentCodeGenerator._flameClass` / `_arguments`, `flameMemberNames` in `dart_names.dart` |
 
 **Adding a component type:** add a `ComponentType` value, a `Component`
 subclass implementing the right capabilities (reuse the value objects' JSON;
 its private `_fromJson` reads only its own properties, `Component.fromJson`
 reads the children for every type), and cases in
-`Component.create`/`Component.fromJson` and
-`buildFlameComponent`. The panel, bloc and preview pick up its properties
-automatically.
+`Component.create`/`Component.fromJson`,
+`buildFlameComponent`, `ComponentCodeGenerator._flameClass` and
+`flameMemberNames` (the public members of its Flame class, which child
+getters must not override). The panel, bloc, preview and generated code
+pick up its properties automatically.
 
 **Adding a property:** add the value object and capability interface, a bloc
-event, an editor widget, a branch in `PropertiesPanel` and in
-`applyProperties`, then implement the capability on the types that have it.
+event, an editor widget, a branch in `PropertiesPanel`, in
+`applyProperties` and in `ComponentCodeGenerator._arguments` (the generated
+code must match the preview), then implement the capability on the types
+that have it.
 
 ### Component tree
 
@@ -197,6 +202,50 @@ The preview `GameWidget` is created with `autofocus: false`: a focused
 shortcuts. Widget tests that show the preview can't use `pumpAndSettle` (the
 game loop never settles), so use `tester.pumpRouteTransition()` from
 `test/helpers`.
+
+### Code generation
+
+Saving a component in the editor also writes its Dart code to
+`<project>/<outputPath>/<snake_case name>.generated.dart` (`outputPath` comes from
+the project settings, default `lib/components`). There is no separate
+"generate" action. `ComponentEditorBloc` composes both repositories: it
+saves the JSON with `ComponentRepository.saveComponent`, reads the settings
+with `ProjectRepository.getSettings` and calls
+`ComponentRepository.writeComponentCode`. If only the code fails, the
+component still counts as saved (`codeConflict` / `codeFailure` statuses,
+shown as a snackbar). `ProjectBloc` deletes the generated file along with
+the component.
+
+`ComponentCodeGenerator` (pure, formatted with `dart_style` at language
+version 3.8) generates code for **Flame 2.0.0-dev** (the version the app
+itself uses, so the preview matches). When upgrading Flame, refresh the
+member lists in `dart_names.dart` (`flameMemberNames`). It generates:
+
+- the root as a public class named in PascalCase after the component,
+  with the `$` prefix of generated code (`player_ship` → `$PlayerShip`),
+  extending its Flame class (games subclass it:
+  `class PlayerShip extends $PlayerShip`), with a
+  `{super.position, super.anchor, super.priority}` constructor (the root's
+  stored position is ignored, like in the preview);
+- **a `final` field (a getter) for every child on the component it is
+  inside**, named in camelCase after the child (`left_arm` → `leftArm`),
+  added in the constructor body;
+- a class `$<Root><Child>` (e.g. `$PlayerShipHead`) for every child that
+  has children of its own, so the nested children get getters too
+  (`player.head.eye`); leaf children are plain Flame components.
+
+Every generated file starts with `ComponentCodeGenerator.header`. The
+repository never overwrites or deletes a file without it
+(`GeneratedFileConflictException`), so hand-written code in the output
+folder is safe.
+
+Child names are the getter names, so the Name field validates them with
+`ComponentTree.validateChildName` (`ChildNameError`): a valid identifier
+that isn't a keyword, not a member of the parent's Flame class (`size`,
+`position`, `paint`, …), and unique in the tree after camelCase
+normalization. Root names are validated on creation: the class name must
+be a valid identifier, and no other component may generate the same file.
+Thanks to the `$` prefix, generated classes never shadow Flame types.
 
 ## Domain sketch (expected, not yet built)
 

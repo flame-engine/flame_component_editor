@@ -152,6 +152,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  cupertino_ui:
+    dependency: transitive
+    description:
+      name: cupertino_ui
+      sha256: "8e14acc2817ff469b925b0e275ab85ecc6c769621360dd0af1331c47f916e247"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.3"
+  dart_style:
+    dependency: transitive
+    description:
+      name: dart_style
+      sha256: a0e4f65339b31eb6a9e6a12e14b4682a48d46fbc54a82f4a702396fbdbac63a7
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.14"
   diff_match_patch:
     dependency: transitive
     description:
@@ -267,18 +283,18 @@ packages:
     dependency: "direct main"
     description:
       name: flame
-      sha256: b4d7e59b81f35a426f8b39dcec10175180b9c2984b2b2e619021660d8951307c
+      sha256: "56f16a56ce921ed80b363e3a1861f6cce43d015fa8958fc8066b1187b1ef571e"
       url: "https://pub.dev"
     source: hosted
-    version: "1.38.2"
+    version: "2.0.0-dev.1"
   flame_test:
     dependency: "direct dev"
     description:
       name: flame_test
-      sha256: "5d58bfb83d1e0d44160ec416fe4fe8a2cb5056de196f438c85adbd6d612c694e"
+      sha256: a9469939b421a52f4c24b22f23d90b6a530cd1dccaaf86a44b97a348c136d309
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.1"
+    version: "3.0.0-dev.1"
   flex_color_picker:
     dependency: "direct main"
     description:
@@ -308,6 +324,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.1.1"
+  flutter_localizations:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -358,6 +379,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.3"
   io:
     dependency: transitive
     description:
@@ -429,6 +458,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  material_ui:
+    dependency: transitive
+    description:
+      name: material_ui
+      sha256: "27ea1af251a79728ee63068417f2ab469d294931a9bb8366ba8b85b0ef839060"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.7.0"
   meta:
     dependency: transitive
     description:
@@ -469,14 +506,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
-  ordered_set:
-    dependency: transitive
-    description:
-      name: ordered_set
-      sha256: ca415a0e28b8e8f5e284af4b7d1b189d2d09af6d2082532ddaec54473f67d226
-      url: "https://pub.dev"
-    source: hosted
-    version: "8.0.1"
   package_config:
     dependency: transitive
     description:
@@ -835,4 +864,4 @@ packages:
     version: "3.1.4"
 sdks:
   dart: ">=3.13.4 <4.0.0"
-  flutter: ">=3.44.0"
+  flutter: ">=3.47.0"
