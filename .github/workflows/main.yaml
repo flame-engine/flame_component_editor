@@ -56,3 +56,11 @@ jobs:
       working_directory: packages/project_repository
       min_coverage: 50
       runs_on: ubuntu-24.04
+
+  component-repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    with:
+      flutter_channel: stable
+      working_directory: packages/component_repository
+      min_coverage: 50
+      runs_on: ubuntu-24.04

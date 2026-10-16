@@ -8,6 +8,8 @@ environment:
 
 dependencies:
   bloc: ^9.2.1
+  component_repository:
+    path: packages/component_repository
   equatable: ^3.0.0
   file_system_client:
     path: packages/file_system_client

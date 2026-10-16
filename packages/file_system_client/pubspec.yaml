@@ -1,5 +1,5 @@
 name: file_system_client
-description: Picks directories and checks whether they exist.
+description: Picks directories and reads, writes, lists and deletes files.
 version: 0.1.0+1
 publish_to: none
 

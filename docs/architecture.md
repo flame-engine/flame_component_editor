@@ -127,13 +127,17 @@ dependencies:
 | Layer | Module | Responsibility |
 | --- | --- | --- |
 | Data | `packages/key_value_storage_client` | Generic string key-value storage (`shared_preferences`) |
-| Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory existence checks |
+| Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory/file existence, list/read/write/delete files |
 | Repository | `packages/project_repository` | `Project` model; pick/open projects; last 10 recent projects |
+| Repository | `packages/component_repository` | `Component` model; list/create/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`) |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
-| View | `lib/project/` | Project screen (placeholder), pushed from home with `ProjectPage.route` |
+| Bloc + view | `lib/project/` | Project dashboard: lists components, add (name dialog → editor), edit, delete (with confirmation), settings icon. Pushed from home with `ProjectPage.route` |
+| View | `lib/component_editor/` | Component editor (placeholder), `ComponentEditorPage.route(project, component)` |
+| View | `lib/project_settings/` | Project settings (placeholder), `ProjectSettingsPage.route(project)` |
 
-`project_repository` has no Flutter imports, but its clients depend on Flutter
-plugins, so it is tested with `flutter test` / `flutter_package.yml`.
+`project_repository` and `component_repository` have no Flutter imports, but
+their clients depend on Flutter plugins, so they are tested with
+`flutter test` / `flutter_package.yml`.
 
 The macOS app sandbox is **disabled** (both entitlements files) so that plain
 folder paths in the recent projects list can be reopened after a restart.
@@ -145,8 +149,7 @@ before creating them.
 
 | Layer | Candidate | Responsibility |
 | --- | --- | --- |
-| Data | `project_file_client` | Read/write editor project files on disk |
-| Repository | `component_repository` | Component definitions (tree of components, properties), undo/redo-friendly immutable models |
+| Repository | `component_repository` (exists) | Grow `Component` into full definitions (tree of components, properties), undo/redo-friendly immutable models |
 | Bloc | `editor/`, `component_tree/`, `inspector/`, `canvas/` | Selection, editing, property changes, canvas interactions |
 | Presentation | same features | Desktop layout: tree panel, Flame canvas preview (`GameWidget`), inspector panel |
 

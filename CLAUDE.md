@@ -51,10 +51,12 @@ three pass.
 
 ## Current state
 
-- Features: `home` (open project + recent projects) and `project`
-  (placeholder). Packages: `key_value_storage_client`, `file_system_client`,
-  `project_repository` — see "Existing modules" in
-  [docs/architecture.md](docs/architecture.md).
+- Features: `home` (open project + recent projects), `project` (dashboard:
+  list/add/edit/delete components), and placeholders `component_editor` and
+  `project_settings`. Packages: `key_value_storage_client`,
+  `file_system_client`, `project_repository`, `component_repository`
+  (components stored in `<project>/.flame_editor/components/<name>.json`) —
+  see "Existing modules" in [docs/architecture.md](docs/architecture.md).
 - `bloc`, `flutter_bloc`, `equatable`, `bloc_test`, `mocktail` and `bloc_lint`
   are dependencies; `flame` is **not yet** — add it when the editor canvas
   needs it.
