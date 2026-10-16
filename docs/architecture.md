@@ -128,12 +128,12 @@ dependencies:
 | --- | --- | --- |
 | Data | `packages/key_value_storage_client` | Generic string key-value storage (`shared_preferences`) |
 | Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory/file existence, list/read/write/delete files |
-| Repository | `packages/project_repository` | `Project` model; pick/open projects; last 10 recent projects |
+| Repository | `packages/project_repository` | `Project` and `ProjectSettings` models; pick/open projects; last 10 recent projects; read/write project settings (`<project>/.flame_editor/settings.json`) and pick a project-relative output folder |
 | Repository | `packages/component_repository` | `Component` model; list/create/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`) |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
-| Bloc + view | `lib/project/` | Project dashboard: lists components, add (name dialog → editor), edit, delete (with confirmation), settings icon. Pushed from home with `ProjectPage.route` |
+| Bloc + view | `lib/project/` | Project dashboard: lists components, add (name dialog → editor), edit, delete (with confirmation), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
 | View | `lib/component_editor/` | Component editor (placeholder), `ComponentEditorPage.route(project, component)` |
-| View | `lib/project_settings/` | Project settings (placeholder), `ProjectSettingsPage.route(project)` |
+| Bloc + view | `lib/project_settings/` | Project settings dialog, `ProjectSettingsDialog.show(context, project)`: output path for generated Dart code (default `lib/components`, text field + Browse) |
 
 `project_repository` and `component_repository` have no Flutter imports, but
 their clients depend on Flutter plugins, so they are tested with

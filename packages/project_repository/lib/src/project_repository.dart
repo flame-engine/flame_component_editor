@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:file_system_client/file_system_client.dart';
 import 'package:key_value_storage_client/key_value_storage_client.dart';
+import 'package:path/path.dart' as p;
 import 'package:project_repository/project_repository.dart';
 
 /// {@template project_not_found_exception}
@@ -15,8 +16,22 @@ class ProjectNotFoundException implements Exception {
   final Project project;
 }
 
+/// {@template invalid_output_path_exception}
+/// Thrown when an output path is not a folder inside the project.
+/// {@endtemplate}
+class InvalidOutputPathException implements Exception {
+  /// {@macro invalid_output_path_exception}
+  const new(this.path);
+
+  /// The rejected path.
+  final String path;
+}
+
 /// {@template project_repository}
-/// Opens projects and keeps track of the most recently opened ones.
+/// Opens projects, keeps track of the most recently opened ones and manages
+/// their settings.
+///
+/// The settings of a project are stored in its [settingsFile].
 /// {@endtemplate}
 class ProjectRepository {
   /// {@macro project_repository}
@@ -30,6 +45,9 @@ class ProjectRepository {
 
   /// Maximum number of recent projects that are kept.
   static const maxRecentProjects = 10;
+
+  /// File, relative to the project folder, where its settings are stored.
+  static const settingsFile = '.flame_editor/settings.json';
 
   /// Returns the recently opened projects, most recent first.
   ///
@@ -75,6 +93,73 @@ class ProjectRepository {
       [project, ...recentProjects].take(maxRecentProjects).toList(),
     );
   }
+
+  /// Returns the settings of [project].
+  ///
+  /// Returns the default settings if none were saved or the stored data is
+  /// unreadable.
+  Future<ProjectSettings> getSettings(Project project) async {
+    final path = _settingsPath(project);
+    try {
+      if (!await _fileSystem.fileExists(path)) return const ProjectSettings();
+      final json = jsonDecode(await _fileSystem.readFile(path));
+      return ProjectSettings.fromJson(json as Map<String, dynamic>);
+    } on Object {
+      return const ProjectSettings();
+    }
+  }
+
+  /// Saves the [settings] of [project] and returns them normalized.
+  ///
+  /// Throws an [InvalidOutputPathException] if the output path is not a
+  /// folder inside the project.
+  Future<ProjectSettings> saveSettings(
+    Project project,
+    ProjectSettings settings,
+  ) async {
+    final normalized = settings.copyWith(
+      outputPath: _normalizeOutputPath(settings.outputPath),
+    );
+    await _fileSystem.writeFile(
+      _settingsPath(project),
+      jsonEncode(normalized.toJson()),
+    );
+    return normalized;
+  }
+
+  /// Asks the user to pick the output folder of [project].
+  ///
+  /// Returns the picked folder relative to the project folder, or `null` if
+  /// the user cancelled. Throws an [InvalidOutputPathException] if the picked
+  /// folder is not inside the project.
+  Future<String?> pickOutputPath(Project project) async {
+    final picked = await _fileSystem.pickDirectory();
+    if (picked == null) return null;
+    if (!p.isWithin(project.path, picked)) {
+      throw InvalidOutputPathException(picked);
+    }
+    return _normalizeOutputPath(p.relative(picked, from: project.path));
+  }
+
+  /// Normalizes a project-relative [path] using `/` as separator.
+  ///
+  /// Throws an [InvalidOutputPathException] if [path] is empty, absolute or
+  /// points outside the project.
+  String _normalizeOutputPath(String path) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty ||
+        p.isAbsolute(trimmed) ||
+        p.posix.isAbsolute(trimmed)) {
+      throw InvalidOutputPathException(path);
+    }
+    final segments = p.split(p.normalize(trimmed));
+    if (segments.first == '.' || segments.first == '..') {
+      throw InvalidOutputPathException(path);
+    }
+    return segments.join('/');
+  }
+
+  String _settingsPath(Project project) => p.join(project.path, settingsFile);
 
   Future<void> _saveRecentProjects(List<Project> projects) {
     return _storage.write(

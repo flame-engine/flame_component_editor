@@ -14,6 +14,8 @@ import '../../helpers/helpers.dart';
 
 class _MockComponentRepository extends Mock implements ComponentRepository;
 
+class _MockProjectRepository extends Mock implements ProjectRepository;
+
 class _MockProjectBloc extends MockBloc<ProjectEvent, ProjectState>
     implements ProjectBloc;
 
@@ -119,12 +121,19 @@ void main() {
     });
 
     testWidgets('opens the settings', (tester) async {
-      await tester.pumpApp(buildSubject());
+      final projectRepository = _MockProjectRepository();
+      when(() => projectRepository.getSettings(project))
+          .thenAnswer((_) async => const ProjectSettings());
+
+      await tester.pumpApp(
+        buildSubject(),
+        projectRepository: projectRepository,
+      );
 
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ProjectSettingsPage), findsOneWidget);
+      expect(find.byType(ProjectSettingsDialog), findsOneWidget);
     });
 
     testWidgets(

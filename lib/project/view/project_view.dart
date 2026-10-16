@@ -50,9 +50,7 @@ class ProjectView extends StatelessWidget {
             IconButton(
               tooltip: 'Settings',
               icon: const Icon(Icons.settings_outlined),
-              onPressed: () =>
-                  Navigator.of(context)
-                      .push(ProjectSettingsPage.route(project)),
+              onPressed: () => ProjectSettingsDialog.show(context, project),
             ),
           ],
         ),
