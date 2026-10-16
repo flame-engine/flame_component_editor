@@ -122,6 +122,22 @@ dependencies:
 
 …and add a CI job for it (see [ci.md](ci.md)).
 
+## Existing modules
+
+| Layer | Module | Responsibility |
+| --- | --- | --- |
+| Data | `packages/key_value_storage_client` | Generic string key-value storage (`shared_preferences`) |
+| Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory existence checks |
+| Repository | `packages/project_repository` | `Project` model; pick/open projects; last 10 recent projects |
+| Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
+| View | `lib/project/` | Project screen (placeholder), pushed from home with `ProjectPage.route` |
+
+`project_repository` has no Flutter imports, but its clients depend on Flutter
+plugins, so it is tested with `flutter test` / `flutter_package.yml`.
+
+The macOS app sandbox is **disabled** (both entitlements files) so that plain
+folder paths in the recent projects list can be reopened after a restart.
+
 ## Domain sketch (expected, not yet built)
 
 These are **likely** candidates as the editor grows; confirm with the user
@@ -131,7 +147,6 @@ before creating them.
 | --- | --- | --- |
 | Data | `project_file_client` | Read/write editor project files on disk |
 | Repository | `component_repository` | Component definitions (tree of components, properties), undo/redo-friendly immutable models |
-| Repository | `project_repository` | Open/save/recent projects, wrapping `project_file_client` |
 | Bloc | `editor/`, `component_tree/`, `inspector/`, `canvas/` | Selection, editing, property changes, canvas interactions |
 | Presentation | same features | Desktop layout: tree panel, Flame canvas preview (`GameWidget`), inspector panel |
 

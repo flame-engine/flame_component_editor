@@ -11,8 +11,11 @@ GitHub Actions in `.github/workflows/main.yaml`, built on
 
 Notes:
 
-- `run_bloc_lint` is `false` for now because `bloc` isn't a dependency yet.
-  Once `bloc_lint` is added, flip it to `true`.
+- `run_bloc_lint` is `true`: the app includes `package:bloc_lint/recommended.yaml`
+  in `analysis_options.yaml`. Run it locally with `bloc lint lib` (from
+  `dart pub global activate bloc_tools`).
+- Each package under `packages/` has its own job (`key-value-storage-client`,
+  `file-system-client`, `project-repository`).
 - Spell check: add legitimate project words to the `words` list in
   `.github/cspell.json` instead of rewording code.
 - Runners are pinned to `runs_on: ubuntu-24.04` (spell-check, build and any

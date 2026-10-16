@@ -1,0 +1,22 @@
+name: project_repository
+description: Repository for opening projects and tracking recently opened ones.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  equatable: ^3.0.0
+  file_system_client:
+    path: ../file_system_client
+  flutter:
+    sdk: flutter
+  key_value_storage_client:
+    path: ../key_value_storage_client
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.5
+  very_good_analysis: ^11.0.0

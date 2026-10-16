@@ -30,5 +30,29 @@ jobs:
     with:
       flutter_channel: stable
       min_coverage: 50
-      run_bloc_lint: false
+      run_bloc_lint: true
+      runs_on: ubuntu-24.04
+
+  key-value-storage-client:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    with:
+      flutter_channel: stable
+      working_directory: packages/key_value_storage_client
+      min_coverage: 50
+      runs_on: ubuntu-24.04
+
+  file-system-client:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    with:
+      flutter_channel: stable
+      working_directory: packages/file_system_client
+      min_coverage: 50
+      runs_on: ubuntu-24.04
+
+  project-repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    with:
+      flutter_channel: stable
+      working_directory: packages/project_repository
+      min_coverage: 50
       runs_on: ubuntu-24.04

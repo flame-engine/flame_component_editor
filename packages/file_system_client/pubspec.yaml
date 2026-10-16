@@ -1,0 +1,17 @@
+name: file_system_client
+description: Picks directories and checks whether they exist.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  file_selector: ^1.1.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
