@@ -96,9 +96,9 @@ class ProjectView extends StatelessWidget {
 
   Future<void> _addComponent(BuildContext context) async {
     final bloc = context.read<ProjectBloc>();
-    final name = await AddComponentDialog.show(context);
-    if (name == null) return;
-    bloc.add(ProjectComponentCreateRequested(name));
+    final result = await AddComponentDialog.show(context);
+    if (result == null) return;
+    bloc.add(ProjectComponentCreateRequested(result.name, result.type));
   }
 
   Future<void> _editComponent(BuildContext context, Component component) async {

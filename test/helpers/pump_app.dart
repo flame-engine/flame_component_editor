@@ -33,4 +33,13 @@ extension PumpApp on WidgetTester {
       ),
     );
   }
+
+  /// Pumps frames until a route transition has finished.
+  ///
+  /// Use instead of `pumpAndSettle` when the route contains a `GameWidget`,
+  /// whose game loop never settles.
+  Future<void> pumpRouteTransition() async {
+    await pump();
+    await pump(const Duration(seconds: 1));
+  }
 }

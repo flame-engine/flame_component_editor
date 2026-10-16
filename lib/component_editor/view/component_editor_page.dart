@@ -1,11 +1,12 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
+import 'package:flame_component_editor/component_editor/view/component_editor_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_repository/project_repository.dart';
 
 /// {@template component_editor_page}
 /// The editor screen for a [Component] of a [Project].
-///
-/// This is a placeholder until the component editor is implemented.
 /// {@endtemplate}
 class ComponentEditorPage extends StatelessWidget {
   /// {@macro component_editor_page}
@@ -27,9 +28,13 @@ class ComponentEditorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(component.name)),
-      body: const Center(child: Text('Component editor coming soon')),
+    return BlocProvider(
+      create: (context) => ComponentEditorBloc(
+        project: project,
+        component: component,
+        componentRepository: context.read<ComponentRepository>(),
+      ),
+      child: const ComponentEditorView(),
     );
   }
 }

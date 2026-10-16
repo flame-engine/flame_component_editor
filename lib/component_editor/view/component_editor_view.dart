@@ -1,0 +1,145 @@
+import 'dart:async';
+
+import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
+import 'package:flame_component_editor/component_editor/widgets/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+/// {@template component_editor_view}
+/// Previews the component being edited in the center and lists its
+/// properties on the right.
+///
+/// Changes are saved with the save button or Cmd/Ctrl+S.
+/// {@endtemplate}
+class ComponentEditorView extends StatelessWidget {
+  /// {@macro component_editor_view}
+  const new({super.key});
+
+  /// Width of the properties panel.
+  static const propertiesPanelWidth = 320.0;
+
+  @override
+  Widget build(BuildContext context) {
+    void save() => context.read<ComponentEditorBloc>().add(
+      const ComponentEditorSaveRequested(),
+    );
+
+    return BlocListener<ComponentEditorBloc, ComponentEditorState>(
+      listenWhen: (previous, current) => previous.status != current.status,
+      listener: (context, state) {
+        if (state.status == ComponentEditorStatus.failure) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(content: Text('Could not save the component')),
+            );
+        }
+      },
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.keyS, meta: true): save,
+          const SingleActivator(LogicalKeyboardKey.keyS, control: true): save,
+        },
+        child: _UnsavedChangesGuard(
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
+              appBar: AppBar(
+                title: const _Title(),
+                actions: [_SaveButton(onPressed: save)],
+              ),
+              body: const Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: ComponentPreview()),
+                  VerticalDivider(width: 1),
+                  SizedBox(
+                    width: propertiesPanelWidth,
+                    child: PropertiesPanel(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Asks what to do with unsaved changes before the editor is left.
+class _UnsavedChangesGuard extends StatelessWidget {
+  const new({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasChanges = context.select<ComponentEditorBloc, bool>(
+      (bloc) => bloc.state.hasChanges,
+    );
+    return PopScope<void>(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_confirmLeave(context));
+      },
+      child: child,
+    );
+  }
+
+  Future<void> _confirmLeave(BuildContext context) async {
+    final bloc = context.read<ComponentEditorBloc>();
+    final navigator = Navigator.of(context);
+
+    final decision = await UnsavedChangesDialog.show(context);
+    switch (decision) {
+      case UnsavedChangesDecision.cancel:
+        return;
+      case UnsavedChangesDecision.discard:
+        navigator.pop();
+      case UnsavedChangesDecision.save:
+        bloc.add(const ComponentEditorSaveRequested());
+        final state = await bloc.stream.firstWhere(
+          (state) =>
+              state.status == ComponentEditorStatus.saved ||
+              state.status == ComponentEditorStatus.failure,
+        );
+        // On failure the editor stays open and shows the error.
+        if (state.status == ComponentEditorStatus.saved) navigator.pop();
+    }
+  }
+}
+
+class _Title extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final (name, hasChanges) = context
+        .select<ComponentEditorBloc, (String, bool)>(
+          (bloc) => (bloc.state.component.name, bloc.state.hasChanges),
+        );
+    return Text(hasChanges ? '$name •' : name);
+  }
+}
+
+class _SaveButton extends StatelessWidget {
+  const new({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final canSave = context.select<ComponentEditorBloc, bool>(
+      (bloc) =>
+          bloc.state.hasChanges &&
+          bloc.state.status != ComponentEditorStatus.saving,
+    );
+    return IconButton(
+      tooltip: 'Save',
+      icon: const Icon(Icons.save_outlined),
+      onPressed: canSave ? onPressed : null,
+    );
+  }
+}
