@@ -14,14 +14,15 @@ final class RectangleComponent extends Component
     super.children,
   });
 
-  /// Creates a [RectangleComponent] from its JSON representation.
-  factory fromJson(Map<String, dynamic> json) {
+  /// Reads the properties of a [RectangleComponent] from its JSON
+  /// representation. Use [Component.fromJson], which also reads the
+  /// children.
+  factory _fromJson(Map<String, dynamic> json) {
     return RectangleComponent(
       name: json['name'] as String,
       position: ComponentPosition.fromJson(json['position']),
       size: ComponentSize.fromJson(json['size']),
       paint: ComponentPaint.fromJson(json['paint']),
-      children: Component._childrenFromJson(json['children']),
     );
   }
 

@@ -122,6 +122,24 @@ void main() {
       );
     });
 
+    testWithGame(
+      'keeps the root centered whatever its stored position',
+      () => ComponentPreviewGame(
+        component: component.copyWithPosition(
+          const ComponentPosition(x: 100, y: 100),
+        ),
+      ),
+      (game) async {
+        await game.ready();
+        expect(game.preview.position, equals(flame.Vector2.zero()));
+
+        await game.show(
+          component.copyWithPosition(const ComponentPosition(x: 7, y: 8)),
+        );
+        expect(game.preview.position, equals(flame.Vector2.zero()));
+      },
+    );
+
     test('show before loading keeps the component for later', () async {
       final game = ComponentPreviewGame(component: component);
 

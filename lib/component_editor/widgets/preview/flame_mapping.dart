@@ -5,11 +5,20 @@ import 'package:flutter/painting.dart';
 /// Builds the Flame component that previews the root [component], with its
 /// children.
 ///
-/// The root is anchored at its center, so it is centered in the world.
-/// Children keep Flame's default top left anchor and are positioned
-/// relative to their parent, like in the generated code.
+/// The root is anchored at its center, at the origin of the world, so it
+/// is centered on screen; its stored position is ignored because the root
+/// is placed by whoever uses it. Children keep Flame's default top left
+/// anchor and are positioned relative to their parent, like in the
+/// generated code.
 flame.PositionComponent buildFlameComponent(Component component) {
-  return _build(component)..anchor = flame.Anchor.center;
+  return _placeRoot(_build(component));
+}
+
+flame.PositionComponent _placeRoot(flame.PositionComponent root) {
+  root
+    ..anchor = flame.Anchor.center
+    ..position.setZero();
+  return root;
 }
 
 flame.PositionComponent _build(Component component) {
@@ -34,16 +43,26 @@ bool haveSameShape(Component a, Component b) {
   return true;
 }
 
-/// Applies the properties of [component] and of all of its children to
-/// [target] and its children, which must have been built by
+/// Applies the properties of the root [component] and of all of its
+/// children to [target] and its children, which must have been built by
 /// [buildFlameComponent] for a component of the same shape (see
 /// [haveSameShape]).
+///
+/// Like in [buildFlameComponent], the root stays centered.
 void applyTree(flame.PositionComponent target, Component component) {
+  _placeRoot(_applyNode(target, component));
+}
+
+flame.PositionComponent _applyNode(
+  flame.PositionComponent target,
+  Component component,
+) {
   applyProperties(target, component);
   final children = target.children.whereType<flame.PositionComponent>();
   for (final (index, child) in children.indexed) {
-    applyTree(child, component.children[index]);
+    _applyNode(child, component.children[index]);
   }
+  return target;
 }
 
 /// Applies every property [component] has to [target].

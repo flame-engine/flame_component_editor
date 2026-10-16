@@ -26,15 +26,17 @@ sealed class Component extends Equatable {
 
   /// Creates a [Component] from its JSON representation.
   ///
-  /// Components saved without a type are read as rectangles.
+  /// Components saved without a type are read as rectangles. The children
+  /// are read here, for every type, so subtypes only read their own
+  /// properties.
   factory fromJson(Map<String, dynamic> json) {
     final type = ComponentType.fromKey(json['type']) ?? ComponentType.rectangle;
-    return switch (type) {
-      ComponentType.rectangle => RectangleComponent.fromJson(json),
+    final component = switch (type) {
+      ComponentType.rectangle => RectangleComponent._fromJson(json),
     };
+    return component.copyWithChildren(_childrenFromJson(json['children']));
   }
 
-  /// Reads the `children` of a component JSON.
   static List<Component> _childrenFromJson(Object? json) {
     return [
       if (json is List)

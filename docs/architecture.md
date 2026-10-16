@@ -159,8 +159,10 @@ component types only declare which ones they have:
 | Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applySize`, `applyPaint`, `buildFlameComponent` |
 
 **Adding a component type:** add a `ComponentType` value, a `Component`
-subclass implementing the right capabilities (reuse the value objects' JSON),
-and cases in `Component.create`/`Component.fromJson` and
+subclass implementing the right capabilities (reuse the value objects' JSON;
+its private `_fromJson` reads only its own properties, `Component.fromJson`
+reads the children for every type), and cases in
+`Component.create`/`Component.fromJson` and
 `buildFlameComponent`. The panel, bloc and preview pick up its properties
 automatically.
 
@@ -179,7 +181,7 @@ edits. The editor state holds `selectedPath`, and every property event edits
 
 The position is only edited on children (`PropertiesPanel` hides it for the
 root, which is placed by whoever uses it). In the preview the root is
-centered with a center anchor; children keep Flame's default top left anchor
+centered with a center anchor (its stored position is ignored); children keep Flame's default top left anchor
 and are positioned relative to their parent. `ComponentPreviewGame.show`
 updates the Flame components in place while the tree shape is unchanged
 (`haveSameShape`) and rebuilds them otherwise.
