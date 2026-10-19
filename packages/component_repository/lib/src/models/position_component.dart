@@ -5,12 +5,17 @@ part of 'component.dart';
 /// nothing itself: a container for its children.
 /// {@endtemplate}
 final class PositionComponent extends Component
-    implements PositionedComponent, AnchoredComponent, SizedComponent {
+    implements
+        PositionedComponent,
+        AnchoredComponent,
+        RotatedComponent,
+        SizedComponent {
   /// {@macro position_component}
   const new({
     required super.name,
     this.position = const ComponentPosition(),
     this.anchor = ComponentAnchor.topLeft,
+    this.angle = ComponentAngle.zero,
     this.size = const ComponentSize(),
     super.children,
   });
@@ -23,6 +28,7 @@ final class PositionComponent extends Component
       name: json['name'] as String,
       position: ComponentPosition.fromJson(json['position']),
       anchor: ComponentAnchor.fromJson(json['anchor']),
+      angle: ComponentAngle.fromJson(json['angle']),
       size: ComponentSize.fromJson(json['size']),
     );
   }
@@ -37,6 +43,9 @@ final class PositionComponent extends Component
   final ComponentAnchor anchor;
 
   @override
+  final ComponentAngle angle;
+
+  @override
   final ComponentSize size;
 
   @override
@@ -47,6 +56,11 @@ final class PositionComponent extends Component
   @override
   PositionComponent copyWithAnchor(ComponentAnchor anchor) {
     return _copyWith(anchor: anchor);
+  }
+
+  @override
+  PositionComponent copyWithAngle(ComponentAngle angle) {
+    return _copyWith(angle: angle);
   }
 
   @override
@@ -66,6 +80,7 @@ final class PositionComponent extends Component
     String? name,
     ComponentPosition? position,
     ComponentAnchor? anchor,
+    ComponentAngle? angle,
     ComponentSize? size,
     List<Component>? children,
   }) {
@@ -73,6 +88,7 @@ final class PositionComponent extends Component
       name: name ?? this.name,
       position: position ?? this.position,
       anchor: anchor ?? this.anchor,
+      angle: angle ?? this.angle,
       size: size ?? this.size,
       children: children ?? this.children,
     );
@@ -83,9 +99,10 @@ final class PositionComponent extends Component
     ...super.toJson(),
     'position': position.toJson(),
     'anchor': anchor.toJson(),
+    'angle': angle.toJson(),
     'size': size.toJson(),
   };
 
   @override
-  List<Object> get props => [...super.props, position, anchor, size];
+  List<Object> get props => [...super.props, position, anchor, angle, size];
 }

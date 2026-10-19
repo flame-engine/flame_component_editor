@@ -83,6 +83,23 @@ void main() {
       ],
     );
 
+    blocTest<ComponentEditorBloc, ComponentEditorState>(
+      'ComponentEditorAngleChanged updates the angle',
+      build: buildBloc,
+      act: (bloc) => bloc.add(
+        const ComponentEditorAngleChanged(ComponentAngle(radians: 1)),
+      ),
+      expect: () => const [
+        ComponentEditorState(
+          component: RectangleComponent(
+            name: 'Player',
+            angle: ComponentAngle(radians: 1),
+          ),
+          savedComponent: component,
+        ),
+      ],
+    );
+
     group('ComponentEditorRadiusChanged', () {
       const radius = ComponentRadius(radius: 10);
       const circle = CircleComponent(name: 'Player');

@@ -104,6 +104,18 @@ final class ComponentEditorAnchorChanged extends ComponentEditorEvent {
   List<Object> get props => [anchor];
 }
 
+/// The user edited the angle of the selected [RotatedComponent].
+final class ComponentEditorAngleChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorAngleChanged] event.
+  const new(this.angle);
+
+  /// The new angle.
+  final ComponentAngle angle;
+
+  @override
+  List<Object> get props => [angle];
+}
+
 /// The user edited the radius of the selected [RadiusComponent].
 final class ComponentEditorRadiusChanged extends ComponentEditorEvent {
   /// Creates a [ComponentEditorRadiusChanged] event.

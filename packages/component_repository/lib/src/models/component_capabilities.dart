@@ -26,6 +26,19 @@ abstract interface class AnchoredComponent {
   Component copyWithAnchor(ComponentAnchor anchor);
 }
 
+/// A [Component] that has a [ComponentAngle].
+///
+/// Implemented by every component type backed by a Flame
+/// `PositionComponent`. Like the position, the angle is only edited on
+/// child components: the root is placed by whoever uses it.
+abstract interface class RotatedComponent {
+  /// The rotation of the component around its anchor.
+  ComponentAngle get angle;
+
+  /// Returns a copy of this component with [angle] replaced.
+  Component copyWithAngle(ComponentAngle angle);
+}
+
 /// A [Component] that has a [ComponentSize].
 ///
 /// Implemented by every component type backed by a Flame
