@@ -92,6 +92,18 @@ final class ComponentEditorSizeChanged extends ComponentEditorEvent {
   List<Object> get props => [size];
 }
 
+/// The user edited the radius of the selected [RadiusComponent].
+final class ComponentEditorRadiusChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorRadiusChanged] event.
+  const new(this.radius);
+
+  /// The new radius.
+  final ComponentRadius radius;
+
+  @override
+  List<Object> get props => [radius];
+}
+
 /// The user edited the paint of the selected [PaintedComponent].
 final class ComponentEditorPaintChanged extends ComponentEditorEvent {
   /// Creates a [ComponentEditorPaintChanged] event.

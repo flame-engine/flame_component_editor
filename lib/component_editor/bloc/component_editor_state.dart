@@ -76,7 +76,7 @@ final class ComponentEditorState extends Equatable {
   final bool isCodeOutdated;
 
   /// Whether the preview highlights the selected node, when it has a size
-  /// (see [SizedComponent]).
+  /// or a radius (see [SizedComponent] and [RadiusComponent]).
   final bool isSelectionHighlighted;
 
   /// Whether the component can be saved: it has changes or its code is

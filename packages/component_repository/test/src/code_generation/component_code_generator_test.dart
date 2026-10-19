@@ -166,6 +166,47 @@ class $Player extends PositionComponent {
       );
     });
 
+    test('generates circles with a radius instead of a size', () {
+      expect(
+        generator.generate(
+          const CircleComponent(
+            name: 'ball',
+            radius: ComponentRadius(radius: 10),
+            children: [
+              CircleComponent(
+                name: 'core',
+                position: ComponentPosition(x: 1, y: 2),
+                radius: ComponentRadius(radius: 2.5),
+                paint: ComponentPaint(
+                  color: 0xFFFF0000,
+                  style: PaintStyle.stroke,
+                ),
+              ),
+            ],
+          ),
+        ),
+        equals('''
+$_header/// The `ball` component.
+class \$Ball extends CircleComponent {
+  /// Creates a [\$Ball].
+  \$Ball({super.position, super.anchor, super.priority})
+    : super(radius: 10, paint: Paint()..color = const Color(0xFFFFFFFF)) {
+    add(core);
+  }
+
+  /// The `core` child component.
+  final CircleComponent core = CircleComponent(
+    position: Vector2(1, 2),
+    radius: 2.5,
+    paint: Paint()
+      ..color = const Color(0xFFFF0000)
+      ..style = PaintingStyle.stroke,
+  );
+}
+'''),
+      );
+    });
+
     test('imports dart:ui when any node has a paint', () {
       expect(
         generator.generate(

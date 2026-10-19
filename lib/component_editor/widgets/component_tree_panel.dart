@@ -91,6 +91,7 @@ class ComponentTreePanel extends StatelessWidget {
     return switch (type) {
       ComponentType.rectangle => Icons.crop_square,
       ComponentType.position => Icons.crop_free,
+      ComponentType.circle => Icons.circle_outlined,
     };
   }
 

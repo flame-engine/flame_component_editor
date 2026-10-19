@@ -69,6 +69,15 @@ void main() {
     );
     expect(flameMemberNames(ComponentType.position), isNot(contains('paint')));
     expect(
+      flameMemberNames(ComponentType.circle),
+      containsAll(['radius', 'paint', 'isSolid']),
+    );
+    expect(
+      flameMemberNames(ComponentType.circle),
+      containsAll(flameMemberNames(ComponentType.position)),
+    );
+    expect(flameMemberNames(ComponentType.circle), isNot(contains('vertices')));
+    expect(
       flameMemberNames(ComponentType.rectangle),
       containsAll(flameMemberNames(ComponentType.position)),
     );

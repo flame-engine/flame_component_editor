@@ -39,7 +39,8 @@ class ComponentPreviewGame extends FlameGame {
   /// Renders [component] instead of the current one, highlighting the node
   /// at [highlightedPath] (see [ComponentTree]), if any.
   ///
-  /// Only nodes with a size ([SizedComponent]) are highlighted.
+  /// Only nodes with a size or a radius ([SizedComponent],
+  /// [RadiusComponent]) are highlighted.
   ///
   /// The existing Flame components are updated in place, unless components
   /// were added, removed or changed type (see [haveSameShape]).
@@ -68,8 +69,12 @@ class ComponentPreviewGame extends FlameGame {
     highlight.target =
         path != null &&
             _component.hasNodeAt(path) &&
-            _component.nodeAt(path) is SizedComponent
+            _hasBounds(_component.nodeAt(path))
         ? flameNodeAt(_preview, path)
         : null;
+  }
+
+  static bool _hasBounds(Component node) {
+    return node is SizedComponent || node is RadiusComponent;
   }
 }

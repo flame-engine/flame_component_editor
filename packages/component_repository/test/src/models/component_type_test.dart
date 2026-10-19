@@ -9,10 +9,11 @@ void main() {
         equals(ComponentType.rectangle),
       );
       expect(ComponentType.fromKey('position'), equals(ComponentType.position));
+      expect(ComponentType.fromKey('circle'), equals(ComponentType.circle));
     });
 
     test('fromKey returns null for unknown keys', () {
-      expect(ComponentType.fromKey('circle'), isNull);
+      expect(ComponentType.fromKey('triangle'), isNull);
       expect(ComponentType.fromKey(null), isNull);
     });
   });

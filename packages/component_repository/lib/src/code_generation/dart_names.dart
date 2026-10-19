@@ -62,6 +62,7 @@ Set<String> flameMemberNames(ComponentType type) {
   return switch (type) {
     ComponentType.rectangle => _rectangleComponentMembers,
     ComponentType.position => _positionComponentMembers,
+    ComponentType.circle => _circleComponentMembers,
   };
 }
 
@@ -230,4 +231,36 @@ const Set<String> _rectangleComponentMembers = {
   'shrinkToBounds',
   'tint',
   'vertices',
+};
+
+/// Public members of Flame's `CircleComponent` (Flame 2.0.0-dev.1),
+/// including the inherited ones: the `PositionComponent` ones, plus those
+/// of `HasPaint` and `ShapeComponent`.
+const Set<String> _circleComponentMembers = {
+  ..._positionComponentMembers,
+  'deletePaint',
+  'getAlpha',
+  'getOpacity',
+  'getPaint',
+  'hasPaintLayers',
+  'hue',
+  'isSolid',
+  'lineSegmentIntersections',
+  'makeOpaque',
+  'makeTransparent',
+  'onChanged',
+  'opacity',
+  'opacityProviderOf',
+  'opacityProviderOfList',
+  'paint',
+  'paintLayers',
+  'paintLayersInternal',
+  'radius',
+  'renderShape',
+  'scaledRadius',
+  'setAlpha',
+  'setColor',
+  'setOpacity',
+  'setPaint',
+  'tint',
 };
