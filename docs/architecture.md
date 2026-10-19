@@ -152,7 +152,7 @@ component types only declare which ones they have:
 | --- | --- | --- |
 | Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentSize`, `ComponentPaint` |
 | Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `SizedComponent`, `PaintedComponent` |
-| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, SizedComponent, PaintedComponent` |
+| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, SizedComponent` |
 | Bloc event | `lib/component_editor/bloc/` | `ComponentEditorSizeChanged` (edits the selected node if it is a `SizedComponent`) |
 | Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `SizeEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
 | Panel wiring | `lib/component_editor/widgets/properties_panel.dart` | `if (component case SizedComponent c) SizeEditor(...)` |
@@ -166,7 +166,7 @@ reads the children for every type), and cases in
 `Component.create`/`Component.fromJson`,
 `buildFlameComponent`, `ComponentCodeGenerator._flameClass` and
 `flameMemberNames` (the public members of its Flame class, which child
-getters must not override). The panel, bloc, preview and generated code
+getters must not override), and an icon in `ComponentTreePanel.iconFor`. The panel, bloc, preview and generated code
 pick up its properties automatically.
 
 **Adding a property:** add the value object and capability interface, a bloc
@@ -190,6 +190,11 @@ centered with a center anchor (its stored position is ignored); children keep Fl
 and are positioned relative to their parent. `ComponentPreviewGame.show`
 updates the Flame components in place while the tree shape is unchanged
 (`haveSameShape`) and rebuilds them otherwise.
+
+Position components draw nothing in Flame, so the preview builds them as
+`PreviewPositionComponent`, a `PositionComponent` with a faint dashed
+outline, to keep them visible while unselected. The outline is preview
+only: the generated code uses a plain `PositionComponent`.
 
 The preview highlights the selected node with a magenta border while
 `isSelectionHighlighted` is on (the toolbar toggle; on by default, not
@@ -242,7 +247,9 @@ member lists in `dart_names.dart` (`flameMemberNames`). It generates:
   has children of its own, so the nested children get getters too
   (`player.head.eye`); leaf children are plain Flame components.
 
-Every generated file starts with `ComponentCodeGenerator.header`. The
+Every generated file starts with `ComponentCodeGenerator.header`.
+`dart:ui` is only imported when a node of the tree has a paint (an unused
+import is a warning that `ignore_for_file: type=lint` doesn't hide). The
 repository never overwrites or deletes a file without it
 (`GeneratedFileConflictException`), so hand-written code in the output
 folder is safe.

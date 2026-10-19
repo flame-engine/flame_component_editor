@@ -1,5 +1,6 @@
 import 'package:component_repository/component_repository.dart';
 import 'package:flame/components.dart' as flame;
+import 'package:flame_component_editor/component_editor/widgets/preview/preview_position_component.dart';
 import 'package:flutter/painting.dart';
 
 /// Builds the Flame component that previews the root [component], with its
@@ -24,6 +25,8 @@ flame.PositionComponent _placeRoot(flame.PositionComponent root) {
 flame.PositionComponent _build(Component component) {
   final target = switch (component) {
     RectangleComponent() => flame.RectangleComponent(),
+    // Outlined, since a plain PositionComponent would be invisible.
+    PositionComponent() => PreviewPositionComponent(),
   };
   applyProperties(target, component);
   // Children added before mounting are stored right away, in order.

@@ -3,7 +3,11 @@
 /// Each value maps to a Flame component class.
 enum ComponentType {
   /// A rectangle, backed by Flame's `RectangleComponent`.
-  rectangle(key: 'rectangle', label: 'Rectangle');
+  rectangle(key: 'rectangle', label: 'Rectangle'),
+
+  /// A plain component that draws nothing itself, backed by Flame's
+  /// `PositionComponent`.
+  position(key: 'position', label: 'Position');
 
   new({required this.key, required this.label});
 

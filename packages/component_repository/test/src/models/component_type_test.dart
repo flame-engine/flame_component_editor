@@ -8,6 +8,7 @@ void main() {
         ComponentType.fromKey('rectangle'),
         equals(ComponentType.rectangle),
       );
+      expect(ComponentType.fromKey('position'), equals(ComponentType.position));
     });
 
     test('fromKey returns null for unknown keys', () {

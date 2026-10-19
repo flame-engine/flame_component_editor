@@ -44,9 +44,14 @@ class ComponentCodeGenerator {
       ..writeln()
       ..writeln('// coverage:ignore-file')
       ..writeln('// ignore_for_file: type=lint')
-      ..writeln()
-      ..writeln("import 'dart:ui';")
-      ..writeln()
+      ..writeln();
+    // `dart:ui` is only needed for paints; an unused import is a warning.
+    if (component.nodes.any((node) => node is PaintedComponent)) {
+      buffer
+        ..writeln("import 'dart:ui';")
+        ..writeln();
+    }
+    buffer
       ..writeln("import 'package:flame/components.dart';")
       ..writeln();
 
@@ -122,6 +127,7 @@ class ComponentCodeGenerator {
   static String _flameClass(Component component) {
     return switch (component) {
       RectangleComponent() => 'RectangleComponent',
+      PositionComponent() => 'PositionComponent',
     };
   }
 

@@ -4,8 +4,16 @@ import 'package:flame_component_editor/component_editor/widgets/widgets.dart';
 import 'package:flame_test/flame_test.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockCanvas extends Mock implements Canvas;
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(Offset.zero);
+    registerFallbackValue(Paint());
+  });
+
   const component = RectangleComponent(
     name: 'Player',
     size: ComponentSize(width: 10, height: 20),
@@ -41,6 +49,34 @@ void main() {
 
         expect(game.preview, same(preview));
         expect(preview.size, equals(flame.Vector2(30, 40)));
+      },
+    );
+
+    testWithGame(
+      'renders position components with a preview-only outline',
+      () => ComponentPreviewGame(
+        component: const PositionComponent(
+          name: 'Player',
+          size: ComponentSize(width: 10, height: 20),
+          children: [
+            PositionComponent(
+              name: 'position1',
+              position: ComponentPosition(x: 5, y: 6),
+              size: ComponentSize(width: 1, height: 2),
+            ),
+          ],
+        ),
+      ),
+      (game) async {
+        await game.ready();
+
+        final preview = game.preview;
+        expect(preview, isA<PreviewPositionComponent>());
+        expect(preview.size, equals(flame.Vector2(10, 20)));
+        final child = preview.children.single as flame.PositionComponent;
+        expect(child, isA<PreviewPositionComponent>());
+        expect(child.position, equals(flame.Vector2(5, 6)));
+        expect(child.size, equals(flame.Vector2(1, 2)));
       },
     );
 
@@ -211,6 +247,28 @@ void main() {
         ..show(component.copyWithSize(const ComponentSize(width: 1)));
 
       expect(game.isLoaded, isFalse);
+    });
+  });
+
+  group(PreviewPositionComponent, () {
+    test('draws a dashed outline around its size', () {
+      final canvas = _MockCanvas();
+      // Edges of 16 and 8 hold two and one 4px dashes respectively.
+      PreviewPositionComponent()
+        ..size.setValues(16, 8)
+        ..render(canvas);
+
+      final starts = verify(() => canvas.drawLine(captureAny(), any(), any()))
+          .captured;
+      expect(starts, hasLength(6));
+      expect(starts.first, equals(Offset.zero));
+    });
+
+    test('draws nothing without a size', () {
+      final canvas = _MockCanvas();
+      PreviewPositionComponent().render(canvas);
+
+      verifyNever(() => canvas.drawLine(any(), any(), any()));
     });
   });
 

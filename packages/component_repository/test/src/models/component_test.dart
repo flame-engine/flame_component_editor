@@ -10,6 +10,13 @@ void main() {
           equals(const RectangleComponent(name: 'Player')),
         );
       });
+
+      test('creates a position component with default properties', () {
+        expect(
+          Component.create('Player', ComponentType.position),
+          equals(const PositionComponent(name: 'Player')),
+        );
+      });
     });
 
     group('fromJson', () {
@@ -17,6 +24,26 @@ void main() {
         expect(
           Component.fromJson(const {'name': 'Player', 'type': 'rectangle'}),
           isA<RectangleComponent>(),
+        );
+      });
+
+      test('reads a position component with children of other types', () {
+        expect(
+          Component.fromJson(const {
+            'name': 'Player',
+            'type': 'position',
+            'size': {'width': 10.0, 'height': 20.0},
+            'children': [
+              {'name': 'rectangle1', 'type': 'rectangle'},
+            ],
+          }),
+          equals(
+            const PositionComponent(
+              name: 'Player',
+              size: ComponentSize(width: 10, height: 20),
+              children: [RectangleComponent(name: 'rectangle1')],
+            ),
+          ),
         );
       });
 
