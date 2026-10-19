@@ -133,7 +133,7 @@ class ComponentCodeGenerator {
   }
 
   /// The arguments of the Flame constructor, one per property. The root
-  /// position is left to whoever uses the component.
+  /// position and anchor are left to whoever uses the component.
   static List<String> _arguments(
     Component component, {
     required bool withPosition,
@@ -141,6 +141,10 @@ class ComponentCodeGenerator {
     return [
       if (component case final PositionedComponent c when withPosition)
         'position: ${_vector(c.position.x, c.position.y)}',
+      // Flame already defaults to the top left anchor.
+      if (component case final AnchoredComponent c
+          when withPosition && c.anchor != ComponentAnchor.topLeft)
+        'anchor: ${_anchor(c.anchor)}',
       if (component case final SizedComponent c)
         'size: ${_vector(c.size.width, c.size.height)}',
       if (component case final RadiusComponent c)
@@ -163,6 +167,13 @@ class ComponentCodeGenerator {
     return value == value.truncateToDouble()
         ? value.toInt().toString()
         : value.toString();
+  }
+
+  static String _anchor(ComponentAnchor anchor) {
+    final name = anchor.presetName;
+    return name != null
+        ? 'Anchor.$name'
+        : 'Anchor(${_number(anchor.x)}, ${_number(anchor.y)})';
   }
 
   static String _paint(ComponentPaint paint) {

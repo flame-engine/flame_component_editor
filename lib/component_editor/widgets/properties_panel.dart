@@ -9,9 +9,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// component tree.
 ///
 /// Editors are picked from the capabilities the node implements, so a new
-/// component type gets them without changes here. The name and the
-/// position are only edited on children: the root name is its file and
-/// class name, and the root is placed by whoever uses it.
+/// component type gets them without changes here. The name, the position
+/// and the anchor are only edited on children: the root name is its file
+/// and class name, and the root is placed by whoever uses it.
 /// {@endtemplate}
 class PropertiesPanel extends StatelessWidget {
   /// {@macro properties_panel}
@@ -52,6 +52,12 @@ class PropertiesPanel extends StatelessWidget {
             value: positioned.position,
             onChanged: (position) =>
                 bloc.add(ComponentEditorPositionChanged(position)),
+          ),
+        if (component case final AnchoredComponent anchored when !isRoot)
+          AnchorEditor(
+            value: anchored.anchor,
+            onChanged: (anchor) =>
+                bloc.add(ComponentEditorAnchorChanged(anchor)),
           ),
         if (component case final SizedComponent sized)
           SizeEditor(

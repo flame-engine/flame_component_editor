@@ -310,11 +310,14 @@ void main() {
         verify(() => bloc.add(const ComponentEditorNodeRemoved([0]))).called(1);
       });
 
-      testWidgets('hides the position of the root', (tester) async {
+      testWidgets('hides the position and the anchor of the root', (
+        tester,
+      ) async {
         stubTree();
         await tester.pumpApp(buildSubject());
 
         expect(find.byType(PositionEditor), findsNothing);
+        expect(find.byType(AnchorEditor), findsNothing);
         expect(find.byType(SizeEditor), findsOneWidget);
       });
 
@@ -366,7 +369,13 @@ void main() {
         expect(find.byType(PositionEditor), findsOneWidget);
         expect(find.widgetWithText(TextField, '5'), findsOneWidget);
 
-        await tester.enterText(find.widgetWithText(TextField, 'X'), '-10');
+        await tester.enterText(
+          find.descendant(
+            of: find.byType(PositionEditor),
+            matching: find.widgetWithText(TextField, 'X'),
+          ),
+          '-10',
+        );
         await tester.testTextInput.receiveAction(TextInputAction.done);
 
         verify(
@@ -374,6 +383,19 @@ void main() {
             const ComponentEditorPositionChanged(
               ComponentPosition(x: -10, y: 6),
             ),
+          ),
+        ).called(1);
+      });
+
+      testWidgets('edits the anchor of a selected child', (tester) async {
+        stubTree(selectedPath: [0]);
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('center'));
+
+        verify(
+          () => bloc.add(
+            const ComponentEditorAnchorChanged(ComponentAnchor.center),
           ),
         ).called(1);
       });

@@ -8,9 +8,9 @@ import 'package:flutter/painting.dart';
 ///
 /// The root is anchored at its center, at the origin of the world, so it
 /// is centered on screen; its stored position is ignored because the root
-/// is placed by whoever uses it. Children keep Flame's default top left
-/// anchor and are positioned relative to their parent, like in the
-/// generated code.
+/// is placed by whoever uses it. Children use their own anchor (Flame's
+/// default top left one unless edited) and are positioned relative to their
+/// parent, like in the generated code.
 flame.PositionComponent buildFlameComponent(Component component) {
   return _placeRoot(_build(component));
 }
@@ -93,6 +93,9 @@ T applyProperties<T extends flame.PositionComponent>(
   if (component case final PositionedComponent positioned) {
     applyPosition(target, positioned.position);
   }
+  if (component case final AnchoredComponent anchored) {
+    applyAnchor(target, anchored.anchor);
+  }
   if (component case final SizedComponent sized) {
     applySize(target, sized.size);
   }
@@ -110,6 +113,11 @@ T applyProperties<T extends flame.PositionComponent>(
 /// Applies [position] to [target].
 void applyPosition(flame.PositionComponent target, ComponentPosition position) {
   target.position.setValues(position.x, position.y);
+}
+
+/// Applies [anchor] to [target].
+void applyAnchor(flame.PositionComponent target, ComponentAnchor anchor) {
+  target.anchor = flame.Anchor(anchor.x, anchor.y);
 }
 
 /// Applies [size] to [target].

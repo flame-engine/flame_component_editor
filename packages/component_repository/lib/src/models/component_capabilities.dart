@@ -13,6 +13,19 @@ abstract interface class PositionedComponent {
   Component copyWithPosition(ComponentPosition position);
 }
 
+/// A [Component] that has a [ComponentAnchor].
+///
+/// Implemented by every component type backed by a Flame
+/// `PositionComponent`. Like the position, the anchor is only edited on
+/// child components: the root is placed by whoever uses it.
+abstract interface class AnchoredComponent {
+  /// The point of the component that is placed at its position.
+  ComponentAnchor get anchor;
+
+  /// Returns a copy of this component with [anchor] replaced.
+  Component copyWithAnchor(ComponentAnchor anchor);
+}
+
 /// A [Component] that has a [ComponentSize].
 ///
 /// Implemented by every component type backed by a Flame
