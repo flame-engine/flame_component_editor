@@ -63,5 +63,14 @@ void main() {
       flameMemberNames(ComponentType.rectangle),
       containsAll(['size', 'position', 'paint', 'children', 'parent']),
     );
+    expect(
+      flameMemberNames(ComponentType.position),
+      containsAll(['size', 'position', 'children', 'parent']),
+    );
+    expect(flameMemberNames(ComponentType.position), isNot(contains('paint')));
+    expect(
+      flameMemberNames(ComponentType.rectangle),
+      containsAll(flameMemberNames(ComponentType.position)),
+    );
   });
 }

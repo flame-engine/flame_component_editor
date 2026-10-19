@@ -1,6 +1,7 @@
 import 'package:component_repository/component_repository.dart';
 import 'package:equatable/equatable.dart';
 
+part 'position_component.dart';
 part 'rectangle_component.dart';
 
 /// {@template component}
@@ -21,6 +22,7 @@ sealed class Component extends Equatable {
   factory create(String name, ComponentType type) {
     return switch (type) {
       ComponentType.rectangle => RectangleComponent(name: name),
+      ComponentType.position => PositionComponent(name: name),
     };
   }
 
@@ -33,6 +35,7 @@ sealed class Component extends Equatable {
     final type = ComponentType.fromKey(json['type']) ?? ComponentType.rectangle;
     final component = switch (type) {
       ComponentType.rectangle => RectangleComponent._fromJson(json),
+      ComponentType.position => PositionComponent._fromJson(json),
     };
     return component.copyWithChildren(_childrenFromJson(json['children']));
   }

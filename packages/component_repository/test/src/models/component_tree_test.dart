@@ -135,6 +135,18 @@ void main() {
         });
       }
 
+      test('accepts the members of other Flame classes', () {
+        const container = PositionComponent(
+          name: 'Player',
+          children: [RectangleComponent(name: 'rectangle1')],
+        );
+        expect(container.validateChildName(const [0], 'paint'), isNull);
+        expect(
+          container.validateChildName(const [0], 'size'),
+          equals(ChildNameError.reserved),
+        );
+      });
+
       for (final name in ['rectangle2', 'Rectangle3', 'player']) {
         test('rejects "$name" as duplicate', () {
           expect(
