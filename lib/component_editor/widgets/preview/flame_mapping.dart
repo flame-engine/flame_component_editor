@@ -8,9 +8,10 @@ import 'package:flutter/painting.dart';
 ///
 /// The root is anchored at its center, at the origin of the world, so it
 /// is centered on screen; its stored position is ignored because the root
-/// is placed by whoever uses it. Children use their own anchor (Flame's
-/// default top left one unless edited) and are positioned relative to their
-/// parent, like in the generated code.
+/// is placed by whoever uses it, and it is not rotated for the same reason.
+/// Children use their own anchor (Flame's default top left one unless
+/// edited) and angle, and are positioned relative to their parent, like in
+/// the generated code.
 flame.PositionComponent buildFlameComponent(Component component) {
   return _placeRoot(_build(component));
 }
@@ -18,6 +19,7 @@ flame.PositionComponent buildFlameComponent(Component component) {
 flame.PositionComponent _placeRoot(flame.PositionComponent root) {
   root
     ..anchor = flame.Anchor.center
+    ..angle = 0
     ..position.setZero();
   return root;
 }
@@ -96,6 +98,9 @@ T applyProperties<T extends flame.PositionComponent>(
   if (component case final AnchoredComponent anchored) {
     applyAnchor(target, anchored.anchor);
   }
+  if (component case final RotatedComponent rotated) {
+    applyAngle(target, rotated.angle);
+  }
   if (component case final SizedComponent sized) {
     applySize(target, sized.size);
   }
@@ -118,6 +123,11 @@ void applyPosition(flame.PositionComponent target, ComponentPosition position) {
 /// Applies [anchor] to [target].
 void applyAnchor(flame.PositionComponent target, ComponentAnchor anchor) {
   target.anchor = flame.Anchor(anchor.x, anchor.y);
+}
+
+/// Applies [angle] to [target].
+void applyAngle(flame.PositionComponent target, ComponentAngle angle) {
+  target.angle = angle.radians;
 }
 
 /// Applies [size] to [target].

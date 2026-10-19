@@ -1,12 +1,13 @@
 part of 'component.dart';
 
 /// {@template rectangle_component}
-/// A rectangle with a position, an anchor, a size and a paint.
+/// A rectangle with a position, an anchor, an angle, a size and a paint.
 /// {@endtemplate}
 final class RectangleComponent extends Component
     implements
         PositionedComponent,
         AnchoredComponent,
+        RotatedComponent,
         SizedComponent,
         PaintedComponent {
   /// {@macro rectangle_component}
@@ -14,6 +15,7 @@ final class RectangleComponent extends Component
     required super.name,
     this.position = const ComponentPosition(),
     this.anchor = ComponentAnchor.topLeft,
+    this.angle = ComponentAngle.zero,
     this.size = const ComponentSize(),
     this.paint = const ComponentPaint(),
     super.children,
@@ -27,6 +29,7 @@ final class RectangleComponent extends Component
       name: json['name'] as String,
       position: ComponentPosition.fromJson(json['position']),
       anchor: ComponentAnchor.fromJson(json['anchor']),
+      angle: ComponentAngle.fromJson(json['angle']),
       size: ComponentSize.fromJson(json['size']),
       paint: ComponentPaint.fromJson(json['paint']),
     );
@@ -42,6 +45,9 @@ final class RectangleComponent extends Component
   final ComponentAnchor anchor;
 
   @override
+  final ComponentAngle angle;
+
+  @override
   final ComponentSize size;
 
   @override
@@ -55,6 +61,11 @@ final class RectangleComponent extends Component
   @override
   RectangleComponent copyWithAnchor(ComponentAnchor anchor) {
     return _copyWith(anchor: anchor);
+  }
+
+  @override
+  RectangleComponent copyWithAngle(ComponentAngle angle) {
+    return _copyWith(angle: angle);
   }
 
   @override
@@ -79,6 +90,7 @@ final class RectangleComponent extends Component
     String? name,
     ComponentPosition? position,
     ComponentAnchor? anchor,
+    ComponentAngle? angle,
     ComponentSize? size,
     ComponentPaint? paint,
     List<Component>? children,
@@ -87,6 +99,7 @@ final class RectangleComponent extends Component
       name: name ?? this.name,
       position: position ?? this.position,
       anchor: anchor ?? this.anchor,
+      angle: angle ?? this.angle,
       size: size ?? this.size,
       paint: paint ?? this.paint,
       children: children ?? this.children,
@@ -98,10 +111,18 @@ final class RectangleComponent extends Component
     ...super.toJson(),
     'position': position.toJson(),
     'anchor': anchor.toJson(),
+    'angle': angle.toJson(),
     'size': size.toJson(),
     'paint': paint.toJson(),
   };
 
   @override
-  List<Object> get props => [...super.props, position, anchor, size, paint];
+  List<Object> get props => [
+    ...super.props,
+    position,
+    anchor,
+    angle,
+    size,
+    paint,
+  ];
 }

@@ -1,4 +1,5 @@
 export 'anchor_editor.dart';
+export 'angle_editor.dart';
 export 'color_field.dart';
 export 'enum_field.dart';
 export 'name_field.dart';

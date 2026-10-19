@@ -7,6 +7,7 @@ void main() {
       name: 'Player',
       position: ComponentPosition(x: 1, y: 2),
       anchor: ComponentAnchor.center,
+      angle: ComponentAngle(radians: 1.5),
       size: ComponentSize(width: 10, height: 20),
       children: [RectangleComponent(name: 'rectangle1')],
     );
@@ -27,6 +28,7 @@ void main() {
       expect(component.type, equals(ComponentType.position));
       expect(component, isA<PositionedComponent>());
       expect(component, isA<AnchoredComponent>());
+      expect(component, isA<RotatedComponent>());
       expect(component, isA<SizedComponent>());
       expect(component, isNot(isA<PaintedComponent>()));
     });
@@ -48,12 +50,14 @@ void main() {
               'children': <Object>[],
               'position': {'x': 0.0, 'y': 0.0},
               'anchor': {'x': 0.0, 'y': 0.0},
+              'angle': {'radians': 0.0},
               'size': {'width': 50.0, 'height': 50.0},
               'paint': {'color': 0xFFFFFFFF, 'style': 'fill'},
             },
           ],
           'position': {'x': 1.0, 'y': 2.0},
           'anchor': {'x': 0.5, 'y': 0.5},
+          'angle': {'radians': 1.5},
           'size': {'width': 10.0, 'height': 20.0},
         }),
       );
@@ -88,6 +92,26 @@ void main() {
       expect(
         (Component.fromJson(json) as AnchoredComponent).anchor,
         equals(ComponentAnchor.topLeft),
+      );
+    });
+
+    test('copyWithAngle replaces only the angle', () {
+      const angle = ComponentAngle(radians: 3);
+      final copy = component.copyWithAngle(angle);
+
+      expect(copy.angle, equals(angle));
+      expect(
+        copy.toJson()..remove('angle'),
+        equals(component.toJson()..remove('angle')),
+      );
+    });
+
+    test('is not rotated when saved without an angle', () {
+      final json = component.toJson()..remove('angle');
+
+      expect(
+        (Component.fromJson(json) as RotatedComponent).angle,
+        equals(ComponentAngle.zero),
       );
     });
 

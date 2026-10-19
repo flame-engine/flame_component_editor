@@ -164,6 +164,23 @@ void main() {
       );
 
       testWithGame(
+        'rotates the children with their angle',
+        () => ComponentPreviewGame(
+          component: component.copyWithChildren([
+            child.copyWithAngle(const ComponentAngle(radians: 1)),
+          ]),
+        ),
+        (game) async {
+          await game.ready();
+
+          final rendered = game.preview.children
+              .whereType<flame.PositionComponent>()
+              .single;
+          expect(rendered.angle, equals(1));
+        },
+      );
+
+      testWithGame(
         'show updates the children in place',
         () => ComponentPreviewGame(component: tree),
         (game) async {
@@ -284,16 +301,19 @@ void main() {
     });
 
     testWithGame(
-      'keeps the root centered whatever its stored position and anchor',
+      'keeps the root centered and not rotated whatever its stored '
+      'position, anchor and angle',
       () => ComponentPreviewGame(
         component: component
             .copyWithPosition(const ComponentPosition(x: 100, y: 100))
-            .copyWithAnchor(ComponentAnchor.bottomRight),
+            .copyWithAnchor(ComponentAnchor.bottomRight)
+            .copyWithAngle(const ComponentAngle(radians: 1)),
       ),
       (game) async {
         await game.ready();
         expect(game.preview.position, equals(flame.Vector2.zero()));
         expect(game.preview.anchor, equals(flame.Anchor.center));
+        expect(game.preview.angle, equals(0));
 
         game.show(
           component.copyWithPosition(const ComponentPosition(x: 7, y: 8)),

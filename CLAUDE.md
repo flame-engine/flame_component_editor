@@ -65,11 +65,11 @@ three pass.
   `file_system_client`, `project_repository`, `component_repository`
   (components stored in `<project>/.flame_editor/components/<name>.json`) —
   see "Existing modules" in [docs/architecture.md](docs/architecture.md).
-- Component types: `rectangle` (position and anchor — edited only on
+- Component types: `rectangle` (position, anchor and angle — edited only on
   children —, size, and paint with color and fill style), `position` (a plain Flame
-  `PositionComponent`: position and anchor — children only — and size; draws nothing
+  `PositionComponent`: position, anchor and angle — children only — and size; draws nothing
   itself, useful as a container) and `circle` (a Flame `CircleComponent`:
-  position and anchor — children only —, radius, and paint; the radius is its own
+  position, anchor and angle — children only —, radius, and paint; the radius is its own
   `ComponentRadius` property, since Flame circles take a radius, not a
   size). Components can have children
   (see "Component tree" in [docs/architecture.md](docs/architecture.md)). Properties are shared between types through capability interfaces —

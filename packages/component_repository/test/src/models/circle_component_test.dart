@@ -7,6 +7,7 @@ void main() {
       name: 'Player',
       position: ComponentPosition(x: 1, y: 2),
       anchor: ComponentAnchor.center,
+      angle: ComponentAngle(radians: 1.5),
       radius: ComponentRadius(radius: 10),
       paint: ComponentPaint(color: 0xFF00FF00, style: PaintStyle.stroke),
       children: [RectangleComponent(name: 'rectangle1')],
@@ -24,6 +25,7 @@ void main() {
       expect(component.type, equals(ComponentType.circle));
       expect(component, isA<PositionedComponent>());
       expect(component, isA<AnchoredComponent>());
+      expect(component, isA<RotatedComponent>());
       expect(component, isA<RadiusComponent>());
       expect(component, isNot(isA<SizedComponent>()));
       expect(component, isA<PaintedComponent>());
@@ -46,12 +48,14 @@ void main() {
               'children': <Object>[],
               'position': {'x': 0.0, 'y': 0.0},
               'anchor': {'x': 0.0, 'y': 0.0},
+              'angle': {'radians': 0.0},
               'size': {'width': 50.0, 'height': 50.0},
               'paint': {'color': 0xFFFFFFFF, 'style': 'fill'},
             },
           ],
           'position': {'x': 1.0, 'y': 2.0},
           'anchor': {'x': 0.5, 'y': 0.5},
+          'angle': {'radians': 1.5},
           'radius': {'radius': 10.0},
           'paint': {'color': 0xFF00FF00, 'style': 'stroke'},
         }),
@@ -87,6 +91,26 @@ void main() {
       expect(
         (Component.fromJson(json) as AnchoredComponent).anchor,
         equals(ComponentAnchor.topLeft),
+      );
+    });
+
+    test('copyWithAngle replaces only the angle', () {
+      const angle = ComponentAngle(radians: 3);
+      final copy = component.copyWithAngle(angle);
+
+      expect(copy.angle, equals(angle));
+      expect(
+        copy.toJson()..remove('angle'),
+        equals(component.toJson()..remove('angle')),
+      );
+    });
+
+    test('is not rotated when saved without an angle', () {
+      final json = component.toJson()..remove('angle');
+
+      expect(
+        (Component.fromJson(json) as RotatedComponent).angle,
+        equals(ComponentAngle.zero),
       );
     });
 

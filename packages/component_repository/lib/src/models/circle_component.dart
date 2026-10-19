@@ -1,12 +1,13 @@
 part of 'component.dart';
 
 /// {@template circle_component}
-/// A circle with a position, an anchor, a radius and a paint.
+/// A circle with a position, an anchor, an angle, a radius and a paint.
 /// {@endtemplate}
 final class CircleComponent extends Component
     implements
         PositionedComponent,
         AnchoredComponent,
+        RotatedComponent,
         RadiusComponent,
         PaintedComponent {
   /// {@macro circle_component}
@@ -14,6 +15,7 @@ final class CircleComponent extends Component
     required super.name,
     this.position = const ComponentPosition(),
     this.anchor = ComponentAnchor.topLeft,
+    this.angle = ComponentAngle.zero,
     this.radius = const ComponentRadius(),
     this.paint = const ComponentPaint(),
     super.children,
@@ -27,6 +29,7 @@ final class CircleComponent extends Component
       name: json['name'] as String,
       position: ComponentPosition.fromJson(json['position']),
       anchor: ComponentAnchor.fromJson(json['anchor']),
+      angle: ComponentAngle.fromJson(json['angle']),
       radius: ComponentRadius.fromJson(json['radius']),
       paint: ComponentPaint.fromJson(json['paint']),
     );
@@ -42,6 +45,9 @@ final class CircleComponent extends Component
   final ComponentAnchor anchor;
 
   @override
+  final ComponentAngle angle;
+
+  @override
   final ComponentRadius radius;
 
   @override
@@ -55,6 +61,11 @@ final class CircleComponent extends Component
   @override
   CircleComponent copyWithAnchor(ComponentAnchor anchor) {
     return _copyWith(anchor: anchor);
+  }
+
+  @override
+  CircleComponent copyWithAngle(ComponentAngle angle) {
+    return _copyWith(angle: angle);
   }
 
   @override
@@ -79,6 +90,7 @@ final class CircleComponent extends Component
     String? name,
     ComponentPosition? position,
     ComponentAnchor? anchor,
+    ComponentAngle? angle,
     ComponentRadius? radius,
     ComponentPaint? paint,
     List<Component>? children,
@@ -87,6 +99,7 @@ final class CircleComponent extends Component
       name: name ?? this.name,
       position: position ?? this.position,
       anchor: anchor ?? this.anchor,
+      angle: angle ?? this.angle,
       radius: radius ?? this.radius,
       paint: paint ?? this.paint,
       children: children ?? this.children,
@@ -98,10 +111,18 @@ final class CircleComponent extends Component
     ...super.toJson(),
     'position': position.toJson(),
     'anchor': anchor.toJson(),
+    'angle': angle.toJson(),
     'radius': radius.toJson(),
     'paint': paint.toJson(),
   };
 
   @override
-  List<Object> get props => [...super.props, position, anchor, radius, paint];
+  List<Object> get props => [
+    ...super.props,
+    position,
+    anchor,
+    angle,
+    radius,
+    paint,
+  ];
 }

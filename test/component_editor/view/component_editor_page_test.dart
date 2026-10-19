@@ -310,7 +310,7 @@ void main() {
         verify(() => bloc.add(const ComponentEditorNodeRemoved([0]))).called(1);
       });
 
-      testWidgets('hides the position and the anchor of the root', (
+      testWidgets('hides the position, the anchor and the angle of the root', (
         tester,
       ) async {
         stubTree();
@@ -318,6 +318,7 @@ void main() {
 
         expect(find.byType(PositionEditor), findsNothing);
         expect(find.byType(AnchorEditor), findsNothing);
+        expect(find.byType(AngleEditor), findsNothing);
         expect(find.byType(SizeEditor), findsOneWidget);
       });
 
@@ -396,6 +397,23 @@ void main() {
         verify(
           () => bloc.add(
             const ComponentEditorAnchorChanged(ComponentAnchor.center),
+          ),
+        ).called(1);
+      });
+
+      testWidgets('edits the angle of a selected child', (tester) async {
+        stubTree(selectedPath: [0]);
+        await tester.pumpApp(buildSubject());
+
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Degrees'),
+          '180',
+        );
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+
+        verify(
+          () => bloc.add(
+            ComponentEditorAngleChanged(ComponentAngle.fromDegrees(180)),
           ),
         ).called(1);
       });

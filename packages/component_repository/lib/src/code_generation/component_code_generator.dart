@@ -61,7 +61,7 @@ class ComponentCodeGenerator {
       rootName: component.name,
       className: rootClass,
       doc: 'The `${component.name}` component.',
-      parameters: '{super.position, super.anchor, super.priority}',
+      parameters: '{super.position, super.angle, super.anchor, super.priority}',
       arguments: _arguments(component, withPosition: false),
     );
     for (final node in component.nodes.skip(1)) {
@@ -133,7 +133,7 @@ class ComponentCodeGenerator {
   }
 
   /// The arguments of the Flame constructor, one per property. The root
-  /// position and anchor are left to whoever uses the component.
+  /// position, angle and anchor are left to whoever uses the component.
   static List<String> _arguments(
     Component component, {
     required bool withPosition,
@@ -141,7 +141,10 @@ class ComponentCodeGenerator {
     return [
       if (component case final PositionedComponent c when withPosition)
         'position: ${_vector(c.position.x, c.position.y)}',
-      // Flame already defaults to the top left anchor.
+      // Flame already defaults to no rotation and the top left anchor.
+      if (component case final RotatedComponent c
+          when withPosition && c.angle != ComponentAngle.zero)
+        'angle: ${_number(c.angle.radians)}',
       if (component case final AnchoredComponent c
           when withPosition && c.anchor != ComponentAnchor.topLeft)
         'anchor: ${_anchor(c.anchor)}',

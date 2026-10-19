@@ -31,7 +31,19 @@ class SelectionHighlight extends flame.Component {
   void render(Canvas canvas) {
     final target = this.target;
     if (target == null || !target.isMounted) return;
-    // Drawn outside of the component, so it doesn't hide its own edges.
-    canvas.drawRect(target.toAbsoluteRect().inflate(strokeWidth / 2), _paint);
+    // Rotated with the component (and its ancestors), around its top left
+    // corner.
+    final topLeft = target.absoluteTopLeftPosition;
+    final size = target.absoluteScaledSize;
+    canvas
+      ..save()
+      ..translate(topLeft.x, topLeft.y)
+      ..rotate(target.absoluteAngle)
+      // Drawn outside of the component, so it doesn't hide its own edges.
+      ..drawRect(
+        Rect.fromLTWH(0, 0, size.x, size.y).inflate(strokeWidth / 2),
+        _paint,
+      )
+      ..restore();
   }
 }
