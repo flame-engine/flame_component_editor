@@ -7,7 +7,10 @@ enum ComponentType {
 
   /// A plain component that draws nothing itself, backed by Flame's
   /// `PositionComponent`.
-  position(key: 'position', label: 'Position');
+  position(key: 'position', label: 'Position'),
+
+  /// A circle, backed by Flame's `CircleComponent`.
+  circle(key: 'circle', label: 'Circle');
 
   new({required this.key, required this.label});
 

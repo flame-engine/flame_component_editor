@@ -25,6 +25,7 @@ flame.PositionComponent _placeRoot(flame.PositionComponent root) {
 flame.PositionComponent _build(Component component) {
   final target = switch (component) {
     RectangleComponent() => flame.RectangleComponent(),
+    CircleComponent() => flame.CircleComponent(),
     // Outlined, since a plain PositionComponent would be invisible.
     PositionComponent() => PreviewPositionComponent(),
   };
@@ -95,6 +96,10 @@ T applyProperties<T extends flame.PositionComponent>(
   if (component case final SizedComponent sized) {
     applySize(target, sized.size);
   }
+  if (component case final RadiusComponent round
+      when target is flame.CircleComponent) {
+    applyRadius(target as flame.CircleComponent, round.radius);
+  }
   if (component case final PaintedComponent painted
       when target is flame.HasPaint) {
     applyPaint(target as flame.HasPaint, painted.paint);
@@ -110,6 +115,11 @@ void applyPosition(flame.PositionComponent target, ComponentPosition position) {
 /// Applies [size] to [target].
 void applySize(flame.PositionComponent target, ComponentSize size) {
   target.size.setValues(size.width, size.height);
+}
+
+/// Applies [radius] to [target], which also sets its size.
+void applyRadius(flame.CircleComponent target, ComponentRadius radius) {
+  target.radius = radius.radius;
 }
 
 /// Applies [paint] to [target].

@@ -1,6 +1,7 @@
 import 'package:component_repository/component_repository.dart';
 import 'package:equatable/equatable.dart';
 
+part 'circle_component.dart';
 part 'position_component.dart';
 part 'rectangle_component.dart';
 
@@ -23,6 +24,7 @@ sealed class Component extends Equatable {
     return switch (type) {
       ComponentType.rectangle => RectangleComponent(name: name),
       ComponentType.position => PositionComponent(name: name),
+      ComponentType.circle => CircleComponent(name: name),
     };
   }
 
@@ -36,6 +38,7 @@ sealed class Component extends Equatable {
     final component = switch (type) {
       ComponentType.rectangle => RectangleComponent._fromJson(json),
       ComponentType.position => PositionComponent._fromJson(json),
+      ComponentType.circle => CircleComponent._fromJson(json),
     };
     return component.copyWithChildren(_childrenFromJson(json['children']));
   }

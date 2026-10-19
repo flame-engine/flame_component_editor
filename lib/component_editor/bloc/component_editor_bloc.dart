@@ -36,6 +36,7 @@ class ComponentEditorBloc
     on<ComponentEditorNameChanged>(_onNameChanged);
     on<ComponentEditorPositionChanged>(_onPositionChanged);
     on<ComponentEditorSizeChanged>(_onSizeChanged);
+    on<ComponentEditorRadiusChanged>(_onRadiusChanged);
     on<ComponentEditorPaintChanged>(_onPaintChanged);
     on<ComponentEditorSelectionHighlightToggled>(_onSelectionHighlightToggled);
     on<ComponentEditorSaveRequested>(_onSaveRequested);
@@ -187,6 +188,18 @@ class ComponentEditorBloc
     _editSelected(emit, (node) {
       if (node case final SizedComponent node) {
         return node.copyWithSize(event.size);
+      }
+      return node;
+    });
+  }
+
+  void _onRadiusChanged(
+    ComponentEditorRadiusChanged event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    _editSelected(emit, (node) {
+      if (node case final RadiusComponent node) {
+        return node.copyWithRadius(event.radius);
       }
       return node;
     });

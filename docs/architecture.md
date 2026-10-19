@@ -150,13 +150,13 @@ component types only declare which ones they have:
 
 | Piece | Where | Example |
 | --- | --- | --- |
-| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentSize`, `ComponentPaint` |
-| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `SizedComponent`, `PaintedComponent` |
-| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, SizedComponent` |
+| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentSize`, `ComponentRadius`, `ComponentPaint` |
+| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `SizedComponent`, `RadiusComponent`, `PaintedComponent` |
+| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, SizedComponent`, `CircleComponent implements PositionedComponent, RadiusComponent, PaintedComponent` |
 | Bloc event | `lib/component_editor/bloc/` | `ComponentEditorSizeChanged` (edits the selected node if it is a `SizedComponent`) |
-| Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `SizeEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
+| Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `SizeEditor`, `RadiusEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
 | Panel wiring | `lib/component_editor/widgets/properties_panel.dart` | `if (component case SizedComponent c) SizeEditor(...)` |
-| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applySize`, `applyPaint`, `buildFlameComponent` |
+| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applySize`, `applyRadius`, `applyPaint`, `buildFlameComponent` |
 | Code generation | `component_repository/lib/src/code_generation/` | `ComponentCodeGenerator._flameClass` / `_arguments`, `flameMemberNames` in `dart_names.dart` |
 
 **Adding a component type:** add a `ComponentType` value, a `Component`
@@ -198,7 +198,9 @@ only: the generated code uses a plain `PositionComponent`.
 
 The preview highlights the selected node with a magenta border while
 `isSelectionHighlighted` is on (the toolbar toggle; on by default, not
-persisted). Only nodes with a size (`SizedComponent`) are highlighted. The
+persisted). Only nodes with a size (`SizedComponent`) or a radius
+(`RadiusComponent`, whose Flame size is the circle's bounding box) are
+highlighted. The
 border is drawn by `SelectionHighlight`, a world-level overlay that targets
 the Flame component found with `flameNodeAt`, rather than a child of it:
 that keeps it above overlapping siblings and keeps the Flame children

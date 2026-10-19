@@ -128,6 +128,7 @@ class ComponentCodeGenerator {
     return switch (component) {
       RectangleComponent() => 'RectangleComponent',
       PositionComponent() => 'PositionComponent',
+      CircleComponent() => 'CircleComponent',
     };
   }
 
@@ -142,6 +143,8 @@ class ComponentCodeGenerator {
         'position: ${_vector(c.position.x, c.position.y)}',
       if (component case final SizedComponent c)
         'size: ${_vector(c.size.width, c.size.height)}',
+      if (component case final RadiusComponent c)
+        'radius: ${_number(c.radius.radius)}',
       if (component case final PaintedComponent c) 'paint: ${_paint(c.paint)}',
     ];
   }

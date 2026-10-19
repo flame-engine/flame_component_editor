@@ -192,6 +192,25 @@ void main() {
       ).called(1);
     });
 
+    testWidgets('edits the radius of circles', (tester) async {
+      const circle = CircleComponent(name: 'Player');
+      when(() => bloc.state).thenReturn(
+        const ComponentEditorState(component: circle, savedComponent: circle),
+      );
+      await tester.pumpApp(buildSubject());
+
+      expect(find.byType(SizeEditor), findsNothing);
+      expect(find.byType(PaintEditor), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextField, 'Radius'), '10');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+
+      verify(
+        () => bloc.add(
+          const ComponentEditorRadiusChanged(ComponentRadius(radius: 10)),
+        ),
+      ).called(1);
+    });
+
     testWidgets('dispatches paint changes', (tester) async {
       await tester.pumpApp(buildSubject());
 

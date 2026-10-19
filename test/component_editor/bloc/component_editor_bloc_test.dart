@@ -67,6 +67,35 @@ void main() {
       ],
     );
 
+    group('ComponentEditorRadiusChanged', () {
+      const radius = ComponentRadius(radius: 10);
+      const circle = CircleComponent(name: 'Player');
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'updates the radius of a circle',
+        build: () => ComponentEditorBloc(
+          project: project,
+          component: circle,
+          componentRepository: componentRepository,
+          projectRepository: projectRepository,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorRadiusChanged(radius)),
+        expect: () => const [
+          ComponentEditorState(
+            component: CircleComponent(name: 'Player', radius: radius),
+            savedComponent: circle,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ignores components without a radius',
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorRadiusChanged(radius)),
+        expect: () => const <ComponentEditorState>[],
+      );
+    });
+
     blocTest<ComponentEditorBloc, ComponentEditorState>(
       'ComponentEditorPaintChanged updates the paint',
       build: buildBloc,

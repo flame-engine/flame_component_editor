@@ -17,9 +17,32 @@ void main() {
           equals(const PositionComponent(name: 'Player')),
         );
       });
+
+      test('creates a circle with default properties', () {
+        expect(
+          Component.create('Player', ComponentType.circle),
+          equals(const CircleComponent(name: 'Player')),
+        );
+      });
     });
 
     group('fromJson', () {
+      test('reads a circle', () {
+        expect(
+          Component.fromJson(const {
+            'name': 'Player',
+            'type': 'circle',
+            'radius': {'radius': 10.0},
+          }),
+          equals(
+            const CircleComponent(
+              name: 'Player',
+              radius: ComponentRadius(radius: 10),
+            ),
+          ),
+        );
+      });
+
       test('reads a rectangle', () {
         expect(
           Component.fromJson(const {'name': 'Player', 'type': 'rectangle'}),

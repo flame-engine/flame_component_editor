@@ -5,4 +5,5 @@ export 'number_field.dart';
 export 'paint_editor.dart';
 export 'position_editor.dart';
 export 'property_section.dart';
+export 'radius_editor.dart';
 export 'size_editor.dart';

@@ -58,6 +58,12 @@ class PropertiesPanel extends StatelessWidget {
             value: sized.size,
             onChanged: (size) => bloc.add(ComponentEditorSizeChanged(size)),
           ),
+        if (component case final RadiusComponent round)
+          RadiusEditor(
+            value: round.radius,
+            onChanged: (radius) =>
+                bloc.add(ComponentEditorRadiusChanged(radius)),
+          ),
         if (component case final PaintedComponent painted)
           PaintEditor(
             value: painted.paint,

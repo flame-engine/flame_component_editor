@@ -80,6 +80,48 @@ void main() {
       },
     );
 
+    testWithGame(
+      'renders circles with their radius and paint',
+      () => ComponentPreviewGame(
+        component: const CircleComponent(
+          name: 'Player',
+          radius: ComponentRadius(radius: 10),
+          paint: ComponentPaint(color: 0xFF00FF00),
+          children: [
+            CircleComponent(
+              name: 'circle1',
+              position: ComponentPosition(x: 5, y: 6),
+              radius: ComponentRadius(radius: 2),
+            ),
+          ],
+        ),
+      ),
+      (game) async {
+        await game.ready();
+
+        final preview = game.preview as flame.CircleComponent;
+        expect(preview.radius, equals(10));
+        expect(preview.size, equals(flame.Vector2(20, 20)));
+        expect(preview.paint.color, equals(const Color(0xFF00FF00)));
+        final child = preview.children.single as flame.CircleComponent;
+        expect(child.position, equals(flame.Vector2(5, 6)));
+        expect(child.radius, equals(2));
+
+        game.show(
+          const CircleComponent(
+            name: 'Player',
+            radius: ComponentRadius(radius: 15),
+            children: [CircleComponent(name: 'circle1')],
+          ),
+          highlightedPath: [0],
+        );
+
+        expect(game.preview, same(preview));
+        expect(preview.radius, equals(15));
+        expect(game.highlight.target, same(child));
+      },
+    );
+
     group('with children', () {
       const child = RectangleComponent(
         name: 'rectangle1',

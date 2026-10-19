@@ -33,3 +33,15 @@ abstract interface class PaintedComponent {
   /// Returns a copy of this component with [paint] replaced.
   Component copyWithPaint(ComponentPaint paint);
 }
+
+/// A [Component] that has a [ComponentRadius].
+///
+/// Implemented by round component types, such as circles, whose Flame size
+/// is derived from the radius.
+abstract interface class RadiusComponent {
+  /// The radius of the component.
+  ComponentRadius get radius;
+
+  /// Returns a copy of this component with [radius] replaced.
+  Component copyWithRadius(ComponentRadius radius);
+}
