@@ -104,6 +104,13 @@ final class ComponentEditorPaintChanged extends ComponentEditorEvent {
   List<Object> get props => [paint];
 }
 
+/// The user toggled the highlight of the selected node in the preview.
+final class ComponentEditorSelectionHighlightToggled
+    extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorSelectionHighlightToggled] event.
+  const new();
+}
+
 /// The user asked to save the component.
 final class ComponentEditorSaveRequested extends ComponentEditorEvent {
   /// Creates a [ComponentEditorSaveRequested] event.

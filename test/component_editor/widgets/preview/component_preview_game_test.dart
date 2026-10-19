@@ -106,6 +106,72 @@ void main() {
       );
     });
 
+    group('highlight', () {
+      const child = RectangleComponent(name: 'rectangle1');
+      final tree = component.copyWithChildren(const [child]);
+
+      testWithGame(
+        'targets the root',
+        () => ComponentPreviewGame(component: component, highlightedPath: []),
+        (game) async {
+          await game.ready();
+
+          expect(game.world.children, contains(game.highlight));
+          expect(game.highlight.target, same(game.preview));
+        },
+      );
+
+      testWithGame(
+        'targets nothing without a path',
+        () => ComponentPreviewGame(component: component),
+        (game) async {
+          await game.ready();
+
+          expect(game.highlight.target, isNull);
+        },
+      );
+
+      testWithGame(
+        'follows the highlighted path',
+        () => ComponentPreviewGame(component: tree, highlightedPath: []),
+        (game) async {
+          await game.ready();
+
+          game.show(tree, highlightedPath: [0]);
+          expect(game.highlight.target, same(flameNodeAt(game.preview, [0])));
+
+          game.show(tree);
+          expect(game.highlight.target, isNull);
+        },
+      );
+
+      testWithGame(
+        'targets the rebuilt component',
+        () => ComponentPreviewGame(component: component, highlightedPath: []),
+        (game) async {
+          await game.ready();
+
+          game.show(tree, highlightedPath: [0]);
+          await game.ready();
+
+          final rendered = game.preview.children
+              .whereType<flame.PositionComponent>()
+              .single;
+          expect(game.highlight.target, same(rendered));
+        },
+      );
+
+      testWithGame(
+        'ignores paths outside of the tree',
+        () => ComponentPreviewGame(component: component, highlightedPath: [3]),
+        (game) async {
+          await game.ready();
+
+          expect(game.highlight.target, isNull);
+        },
+      );
+    });
+
     test('haveSameShape compares the types and the tree', () {
       const child = RectangleComponent(name: 'rectangle1');
 

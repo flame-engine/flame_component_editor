@@ -37,6 +37,7 @@ class ComponentEditorBloc
     on<ComponentEditorPositionChanged>(_onPositionChanged);
     on<ComponentEditorSizeChanged>(_onSizeChanged);
     on<ComponentEditorPaintChanged>(_onPaintChanged);
+    on<ComponentEditorSelectionHighlightToggled>(_onSelectionHighlightToggled);
     on<ComponentEditorSaveRequested>(_onSaveRequested);
   }
 
@@ -211,6 +212,13 @@ class ComponentEditorBloc
     final component = state.component.updateNodeAt(state.selectedPath, edit);
     if (component == state.component) return;
     emit(state.copyWith(status: _editedStatus, component: component));
+  }
+
+  void _onSelectionHighlightToggled(
+    ComponentEditorSelectionHighlightToggled event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    emit(state.copyWith(isSelectionHighlighted: !state.isSelectionHighlighted));
   }
 
   Future<void> _onSaveRequested(

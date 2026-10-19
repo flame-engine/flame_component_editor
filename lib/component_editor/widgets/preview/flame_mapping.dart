@@ -65,6 +65,19 @@ flame.PositionComponent _applyNode(
   return target;
 }
 
+/// The Flame component at [path] in the tree built by
+/// [buildFlameComponent] from [root] (see `ComponentTree` for paths).
+flame.PositionComponent flameNodeAt(
+  flame.PositionComponent root,
+  List<int> path,
+) {
+  var node = root;
+  for (final index in path) {
+    node = node.children.whereType<flame.PositionComponent>().elementAt(index);
+  }
+  return node;
+}
+
 /// Applies every property [component] has to [target].
 ///
 /// New shared properties should be wired here so that every component type

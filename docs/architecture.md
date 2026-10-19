@@ -132,7 +132,7 @@ dependencies:
 | Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`), capability interfaces and the `ComponentTree` extension for nested children (including child name validation); list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`); `ComponentCodeGenerator` and writing/deleting the generated Dart code (see "Code generation") |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
 | Bloc + view | `lib/project/` | Project dashboard: lists components, add (name + type dialog → editor), edit, delete (with confirmation; also deletes the generated code), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
-| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: component tree (left, add/remove children, root selected by default), Flame preview (center), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
+| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: component tree (left, add/remove children, root selected by default), Flame preview (center, magenta border around the selected node; a toolbar above it toggles that highlight), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
 | Bloc + view | `lib/project_settings/` | Project settings dialog, `ProjectSettingsDialog.show(context, project)`: output path for generated Dart code (default `lib/components`, text field + Browse) |
 
 `project_repository` and `component_repository` have no Flutter imports, but
@@ -190,6 +190,14 @@ centered with a center anchor (its stored position is ignored); children keep Fl
 and are positioned relative to their parent. `ComponentPreviewGame.show`
 updates the Flame components in place while the tree shape is unchanged
 (`haveSameShape`) and rebuilds them otherwise.
+
+The preview highlights the selected node with a magenta border while
+`isSelectionHighlighted` is on (the toolbar toggle; on by default, not
+persisted). Only nodes with a size (`SizedComponent`) are highlighted. The
+border is drawn by `SelectionHighlight`, a world-level overlay that targets
+the Flame component found with `flameNodeAt`, rather than a child of it:
+that keeps it above overlapping siblings and keeps the Flame children
+matching the component tree.
 
 Domain models avoid `dart:ui`: colors are ARGB `int`s and `PaintStyle` mirrors
 `PaintingStyle`. Conversion to Flame/Flutter types happens only in
