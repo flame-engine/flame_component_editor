@@ -207,6 +207,48 @@ class \$Ball extends CircleComponent {
       );
     });
 
+    test('generates polygons with their vertices', () {
+      expect(
+        generator.generate(
+          const PolygonComponent(
+            name: 'ship',
+            children: [
+              PolygonComponent(
+                name: 'wing',
+                position: ComponentPosition(x: 1, y: 2),
+                vertices: ComponentVertices([
+                  ComponentVertex(0, 0),
+                  ComponentVertex(10, 0),
+                  ComponentVertex(0, 2.5),
+                ]),
+              ),
+            ],
+          ),
+        ),
+        equals('''
+$_header/// The `ship` component.
+class \$Ship extends PolygonComponent {
+  /// Creates a [\$Ship].
+  \$Ship({super.position, super.angle, super.anchor, super.priority})
+    : super([
+        Vector2(25, 0),
+        Vector2(50, 50),
+        Vector2(0, 50),
+      ], paint: Paint()..color = const Color(0xFFFFFFFF)) {
+    add(wing);
+  }
+
+  /// The `wing` child component.
+  final PolygonComponent wing = PolygonComponent(
+    [Vector2(0, 0), Vector2(10, 0), Vector2(0, 2.5)],
+    position: Vector2(1, 2),
+    paint: Paint()..color = const Color(0xFFFFFFFF),
+  );
+}
+'''),
+      );
+    });
+
     test('generates the angle of children, but not of the root', () {
       expect(
         generator.generate(

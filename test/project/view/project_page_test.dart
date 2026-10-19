@@ -273,6 +273,35 @@ void main() {
         expect(find.text('Rectangle'), findsWidgets);
       });
 
+      testWidgets('asks for the shape of polygons', (tester) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+        expect(find.byType(DropdownMenu<PolygonShape>), findsNothing);
+
+        await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Ship');
+        await tester.tap(find.byType(DropdownMenu<ComponentType>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Polygon').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DropdownMenu<PolygonShape>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Square').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Create'));
+        await tester.pumpAndSettle();
+
+        verify(
+          () => projectBloc.add(
+            const ProjectComponentCreateRequested(
+              'Ship',
+              ComponentType.polygon,
+              polygonShape: PolygonShape.square,
+            ),
+          ),
+        ).called(1);
+      });
+
       testWidgets('disables create while the name is empty', (tester) async {
         await tester.pumpApp(buildSubject());
         await tester.tap(find.text('Add component'));

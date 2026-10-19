@@ -39,6 +39,7 @@ class ComponentEditorBloc
     on<ComponentEditorAngleChanged>(_onAngleChanged);
     on<ComponentEditorSizeChanged>(_onSizeChanged);
     on<ComponentEditorRadiusChanged>(_onRadiusChanged);
+    on<ComponentEditorVerticesChanged>(_onVerticesChanged);
     on<ComponentEditorPaintChanged>(_onPaintChanged);
     on<ComponentEditorSelectionHighlightToggled>(_onSelectionHighlightToggled);
     on<ComponentEditorSaveRequested>(_onSaveRequested);
@@ -128,6 +129,7 @@ class ComponentEditorBloc
         takenClassNames: state.takenClassNames.keys.toSet(),
       ),
       event.type,
+      polygonShape: event.polygonShape,
     );
     emit(
       state.copyWith(
@@ -226,6 +228,18 @@ class ComponentEditorBloc
     _editSelected(emit, (node) {
       if (node case final RadiusComponent node) {
         return node.copyWithRadius(event.radius);
+      }
+      return node;
+    });
+  }
+
+  void _onVerticesChanged(
+    ComponentEditorVerticesChanged event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    _editSelected(emit, (node) {
+      if (node case final VerticesComponent node) {
+        return node.copyWithVertices(event.vertices);
       }
       return node;
     });

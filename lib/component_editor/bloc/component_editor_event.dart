@@ -28,15 +28,20 @@ final class ComponentEditorNodeSelected extends ComponentEditorEvent {
 }
 
 /// The user added a component of [type] inside the selected node.
+///
+/// Polygons start with the vertices of [polygonShape].
 final class ComponentEditorChildAdded extends ComponentEditorEvent {
   /// Creates a [ComponentEditorChildAdded] event.
-  const new(this.type);
+  const new(this.type, {this.polygonShape = PolygonShape.triangle});
 
   /// The type of the new component.
   final ComponentType type;
 
+  /// The shape of the new component, if it is a polygon.
+  final PolygonShape polygonShape;
+
   @override
-  List<Object> get props => [type];
+  List<Object> get props => [type, polygonShape];
 }
 
 /// The user removed the node at [path] from the component tree.
@@ -126,6 +131,18 @@ final class ComponentEditorRadiusChanged extends ComponentEditorEvent {
 
   @override
   List<Object> get props => [radius];
+}
+
+/// The user edited the vertices of the selected [VerticesComponent].
+final class ComponentEditorVerticesChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorVerticesChanged] event.
+  const new(this.vertices);
+
+  /// The new vertices.
+  final ComponentVertices vertices;
+
+  @override
+  List<Object> get props => [vertices];
 }
 
 /// The user edited the paint of the selected [PaintedComponent].

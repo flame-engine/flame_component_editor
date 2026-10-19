@@ -53,6 +53,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         _project.path,
         event.name,
         event.type,
+        polygonShape: event.polygonShape,
       );
       emit(
         state.copyWith(

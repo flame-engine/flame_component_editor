@@ -129,6 +129,7 @@ class ComponentCodeGenerator {
       RectangleComponent() => 'RectangleComponent',
       PositionComponent() => 'PositionComponent',
       CircleComponent() => 'CircleComponent',
+      PolygonComponent() => 'PolygonComponent',
     };
   }
 
@@ -139,6 +140,9 @@ class ComponentCodeGenerator {
     required bool withPosition,
   }) {
     return [
+      // Positional, so it comes first. Not const: Flame changes the list.
+      if (component case final VerticesComponent c)
+        '[${c.vertices.vertices.map((v) => _vector(v.x, v.y)).join(', ')}]',
       if (component case final PositionedComponent c when withPosition)
         'position: ${_vector(c.position.x, c.position.y)}',
       // Flame already defaults to no rotation and the top left anchor.

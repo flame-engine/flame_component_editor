@@ -10,7 +10,10 @@ enum ComponentType {
   position(key: 'position', label: 'Position'),
 
   /// A circle, backed by Flame's `CircleComponent`.
-  circle(key: 'circle', label: 'Circle');
+  circle(key: 'circle', label: 'Circle'),
+
+  /// A polygon, backed by Flame's `PolygonComponent`.
+  polygon(key: 'polygon', label: 'Polygon');
 
   new({required this.key, required this.label});
 

@@ -37,19 +37,35 @@ class ComponentTreePanel extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              PopupMenuButton<ComponentType>(
+              PopupMenuButton<ComponentEditorChildAdded>(
                 tooltip: 'Add child',
                 icon: const Icon(Icons.add),
-                onSelected: (type) => bloc.add(ComponentEditorChildAdded(type)),
+                onSelected: bloc.add,
                 itemBuilder: (_) => [
                   for (final type in ComponentType.values)
-                    PopupMenuItem(
-                      value: type,
-                      child: ListTile(
-                        leading: Icon(iconFor(type)),
-                        title: Text(type.label),
+                    if (type == ComponentType.polygon)
+                      // One entry per shape a new polygon can start with.
+                      for (final shape in PolygonShape.values)
+                        PopupMenuItem(
+                          value: ComponentEditorChildAdded(
+                            type,
+                            polygonShape: shape,
+                          ),
+                          child: ListTile(
+                            leading: Icon(iconFor(type)),
+                            title: Text(
+                              '${type.label} (${shape.label.toLowerCase()})',
+                            ),
+                          ),
+                        )
+                    else
+                      PopupMenuItem(
+                        value: ComponentEditorChildAdded(type),
+                        child: ListTile(
+                          leading: Icon(iconFor(type)),
+                          title: Text(type.label),
+                        ),
                       ),
-                    ),
                 ],
               ),
               IconButton(
@@ -92,6 +108,7 @@ class ComponentTreePanel extends StatelessWidget {
       ComponentType.rectangle => Icons.crop_square,
       ComponentType.position => Icons.crop_free,
       ComponentType.circle => Icons.circle_outlined,
+      ComponentType.polygon => Icons.pentagon_outlined,
     };
   }
 

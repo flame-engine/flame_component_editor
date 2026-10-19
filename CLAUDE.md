@@ -65,7 +65,12 @@ three pass.
   `file_system_client`, `project_repository`, `component_repository`
   (components stored in `<project>/.flame_editor/components/<name>.json`) —
   see "Existing modules" in [docs/architecture.md](docs/architecture.md).
-- Component types: `rectangle` (position, anchor and angle — edited only on
+- Component types: `polygon` (a Flame `PolygonComponent`: position, anchor
+  and angle — children only —, vertices and paint; no size, which is the
+  vertices' bounding box; it starts as a triangle or a square, and its
+  vertices are edited in the vertices editor dialog, `lib/vertices_editor/`,
+  by dragging, adding from edge midpoints and deleting — see "Polygons" in
+  [docs/architecture.md](docs/architecture.md)), `rectangle` (position, anchor and angle — edited only on
   children —, size, and paint with color and fill style), `position` (a plain Flame
   `PositionComponent`: position, anchor and angle — children only — and size; draws nothing
   itself, useful as a container) and `circle` (a Flame `CircleComponent`:

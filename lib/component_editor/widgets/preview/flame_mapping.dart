@@ -28,6 +28,10 @@ flame.PositionComponent _build(Component component) {
   final target = switch (component) {
     RectangleComponent() => flame.RectangleComponent(),
     CircleComponent() => flame.CircleComponent(),
+    // Flame changes the list it is given, so it gets a new one.
+    PolygonComponent(:final vertices) => flame.PolygonComponent([
+      for (final vertex in vertices.vertices) flame.Vector2(vertex.x, vertex.y),
+    ]),
     // Outlined, since a plain PositionComponent would be invisible.
     PositionComponent() => PreviewPositionComponent(),
   };
@@ -39,8 +43,16 @@ flame.PositionComponent _build(Component component) {
 
 /// Whether [a] and [b] have the same types arranged in the same tree, so
 /// that the Flame components built for [a] can be updated to show [b].
+///
+/// Polygons with different vertices don't have the same shape: a Flame
+/// polygon can't change its number of vertices, nor be given new ones from
+/// outside.
 bool haveSameShape(Component a, Component b) {
   if (a.type != b.type || a.children.length != b.children.length) {
+    return false;
+  }
+  if ((a, b) case (final VerticesComponent a, final VerticesComponent b)
+      when a.vertices != b.vertices) {
     return false;
   }
   for (var i = 0; i < a.children.length; i++) {
