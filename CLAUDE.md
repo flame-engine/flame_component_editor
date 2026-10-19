@@ -56,7 +56,8 @@ three pass.
   type), `project_settings` (settings dialog: generated code output path,
   stored in `<project>/.flame_editor/settings.json`) and `component_editor`
   (component tree on the left to add/remove/select/rename nested children,
-  live Flame preview in the center, properties of the selected node on the
+  live Flame preview in the center, with a toolbar above it whose toggle
+  highlights the selected node with a magenta border, properties of the selected node on the
   right, explicit save with button or Cmd/Ctrl+S, unsaved-changes prompt when
   leaving). **Saving also generates the component's Dart code** in the
   settings' output path, with a getter for every child — see "Code

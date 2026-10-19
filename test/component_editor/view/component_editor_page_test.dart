@@ -94,6 +94,91 @@ void main() {
       expect(find.byType(PaintEditor), findsOneWidget);
     });
 
+    group('highlight toggle', () {
+      IconButton toggle(WidgetTester tester) => tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.highlight_alt),
+          matching: find.byType(IconButton),
+        ),
+      );
+
+      testWidgets('is selected while highlighting', (tester) async {
+        await tester.pumpApp(buildSubject());
+
+        expect(toggle(tester).isSelected, isTrue);
+      });
+
+      testWidgets('is not selected while not highlighting', (tester) async {
+        when(() => bloc.state).thenReturn(
+          const ComponentEditorState(
+            component: component,
+            savedComponent: component,
+            isSelectionHighlighted: false,
+          ),
+        );
+        await tester.pumpApp(buildSubject());
+
+        expect(toggle(tester).isSelected, isFalse);
+      });
+
+      testWidgets('is filled only when selected', (tester) async {
+        await tester.pumpApp(buildSubject());
+        final colorScheme = Theme.of(tester.element(find.byType(EditorToolbar)))
+            .colorScheme;
+        final background = toggle(tester).style!.backgroundColor!;
+
+        expect(
+          background.resolve({WidgetState.selected}),
+          equals(colorScheme.primaryContainer),
+        );
+        expect(background.resolve({}), isNull);
+      });
+    });
+
+    testWidgets('toolbar sits above the preview only', (tester) async {
+      await tester.pumpApp(buildSubject());
+
+      final toolbar = tester.getRect(find.byType(EditorToolbar));
+      final preview = tester.getRect(find.byType(ComponentPreview));
+      expect(toolbar.left, equals(preview.left));
+      expect(toolbar.width, equals(preview.width));
+      expect(toolbar.bottom, lessThanOrEqualTo(preview.top));
+    });
+
+    testWidgets('dispatches highlight toggles', (tester) async {
+      await tester.pumpApp(buildSubject());
+
+      await tester.tap(find.byTooltip('Highlight selection'));
+
+      verify(() => bloc.add(const ComponentEditorSelectionHighlightToggled()))
+          .called(1);
+    });
+
+    testWidgets('preview highlights the selection while enabled', (
+      tester,
+    ) async {
+      const state = ComponentEditorState(
+        component: component,
+        savedComponent: component,
+      );
+      final states = StreamController<ComponentEditorState>();
+      whenListen(bloc, states.stream, initialState: state);
+      await tester.pumpApp(buildSubject());
+      await tester.pump();
+      final game = tester
+          .widget<GameWidget<ComponentPreviewGame>>(
+            find.byType(GameWidget<ComponentPreviewGame>),
+          )
+          .game!;
+      expect(game.highlight.target, same(game.preview));
+
+      states.add(state.copyWith(isSelectionHighlighted: false));
+      await tester.pump();
+
+      expect(game.highlight.target, isNull);
+      await states.close();
+    });
+
     testWidgets('dispatches size changes', (tester) async {
       await tester.pumpApp(buildSubject());
 

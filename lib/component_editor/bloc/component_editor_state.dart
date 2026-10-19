@@ -44,6 +44,7 @@ final class ComponentEditorState extends Equatable {
     this.selectedPath = const [],
     this.takenClassNames = const {},
     this.isCodeOutdated = false,
+    this.isSelectionHighlighted = true,
   });
 
   /// The current status.
@@ -73,6 +74,10 @@ final class ComponentEditorState extends Equatable {
   /// The component can then be saved without changes, to generate the
   /// code once whatever was in the way is fixed.
   final bool isCodeOutdated;
+
+  /// Whether the preview highlights the selected node, when it has a size
+  /// (see [SizedComponent]).
+  final bool isSelectionHighlighted;
 
   /// Whether the component can be saved: it has changes or its code is
   /// outdated, and it is not being saved already.
@@ -114,6 +119,7 @@ final class ComponentEditorState extends Equatable {
     List<int>? selectedPath,
     Map<String, Component>? takenClassNames,
     bool? isCodeOutdated,
+    bool? isSelectionHighlighted,
   }) {
     return ComponentEditorState(
       status: status ?? this.status,
@@ -122,6 +128,8 @@ final class ComponentEditorState extends Equatable {
       selectedPath: selectedPath ?? this.selectedPath,
       takenClassNames: takenClassNames ?? this.takenClassNames,
       isCodeOutdated: isCodeOutdated ?? this.isCodeOutdated,
+      isSelectionHighlighted:
+          isSelectionHighlighted ?? this.isSelectionHighlighted,
     );
   }
 
@@ -133,5 +141,6 @@ final class ComponentEditorState extends Equatable {
     selectedPath,
     takenClassNames,
     isCodeOutdated,
+    isSelectionHighlighted,
   ];
 }

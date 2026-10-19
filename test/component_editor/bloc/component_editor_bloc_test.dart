@@ -79,6 +79,26 @@ void main() {
       ],
     );
 
+    test('highlights the selection by default', () {
+      expect(buildBloc().state.isSelectionHighlighted, isTrue);
+    });
+
+    blocTest<ComponentEditorBloc, ComponentEditorState>(
+      'ComponentEditorSelectionHighlightToggled toggles the highlight',
+      build: buildBloc,
+      act: (bloc) => bloc
+        ..add(const ComponentEditorSelectionHighlightToggled())
+        ..add(const ComponentEditorSelectionHighlightToggled()),
+      expect: () => const [
+        ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          isSelectionHighlighted: false,
+        ),
+        ComponentEditorState(component: component, savedComponent: component),
+      ],
+    );
+
     test('rootClassOwner is the other component generating the root '
         'class', () {
       const aB = RectangleComponent(name: 'a_b');
