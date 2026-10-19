@@ -1,14 +1,19 @@
 part of 'component.dart';
 
 /// {@template circle_component}
-/// A circle with a position, a radius and a paint.
+/// A circle with a position, an anchor, a radius and a paint.
 /// {@endtemplate}
 final class CircleComponent extends Component
-    implements PositionedComponent, RadiusComponent, PaintedComponent {
+    implements
+        PositionedComponent,
+        AnchoredComponent,
+        RadiusComponent,
+        PaintedComponent {
   /// {@macro circle_component}
   const new({
     required super.name,
     this.position = const ComponentPosition(),
+    this.anchor = ComponentAnchor.topLeft,
     this.radius = const ComponentRadius(),
     this.paint = const ComponentPaint(),
     super.children,
@@ -21,6 +26,7 @@ final class CircleComponent extends Component
     return CircleComponent(
       name: json['name'] as String,
       position: ComponentPosition.fromJson(json['position']),
+      anchor: ComponentAnchor.fromJson(json['anchor']),
       radius: ComponentRadius.fromJson(json['radius']),
       paint: ComponentPaint.fromJson(json['paint']),
     );
@@ -33,6 +39,9 @@ final class CircleComponent extends Component
   final ComponentPosition position;
 
   @override
+  final ComponentAnchor anchor;
+
+  @override
   final ComponentRadius radius;
 
   @override
@@ -41,6 +50,11 @@ final class CircleComponent extends Component
   @override
   CircleComponent copyWithPosition(ComponentPosition position) {
     return _copyWith(position: position);
+  }
+
+  @override
+  CircleComponent copyWithAnchor(ComponentAnchor anchor) {
+    return _copyWith(anchor: anchor);
   }
 
   @override
@@ -64,6 +78,7 @@ final class CircleComponent extends Component
   CircleComponent _copyWith({
     String? name,
     ComponentPosition? position,
+    ComponentAnchor? anchor,
     ComponentRadius? radius,
     ComponentPaint? paint,
     List<Component>? children,
@@ -71,6 +86,7 @@ final class CircleComponent extends Component
     return CircleComponent(
       name: name ?? this.name,
       position: position ?? this.position,
+      anchor: anchor ?? this.anchor,
       radius: radius ?? this.radius,
       paint: paint ?? this.paint,
       children: children ?? this.children,
@@ -81,10 +97,11 @@ final class CircleComponent extends Component
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'position': position.toJson(),
+    'anchor': anchor.toJson(),
     'radius': radius.toJson(),
     'paint': paint.toJson(),
   };
 
   @override
-  List<Object> get props => [...super.props, position, radius, paint];
+  List<Object> get props => [...super.props, position, anchor, radius, paint];
 }

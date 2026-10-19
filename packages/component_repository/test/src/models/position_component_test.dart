@@ -6,6 +6,7 @@ void main() {
     const component = PositionComponent(
       name: 'Player',
       position: ComponentPosition(x: 1, y: 2),
+      anchor: ComponentAnchor.center,
       size: ComponentSize(width: 10, height: 20),
       children: [RectangleComponent(name: 'rectangle1')],
     );
@@ -25,6 +26,7 @@ void main() {
     test('is a position component with a position and a size', () {
       expect(component.type, equals(ComponentType.position));
       expect(component, isA<PositionedComponent>());
+      expect(component, isA<AnchoredComponent>());
       expect(component, isA<SizedComponent>());
       expect(component, isNot(isA<PaintedComponent>()));
     });
@@ -45,11 +47,13 @@ void main() {
               'type': 'rectangle',
               'children': <Object>[],
               'position': {'x': 0.0, 'y': 0.0},
+              'anchor': {'x': 0.0, 'y': 0.0},
               'size': {'width': 50.0, 'height': 50.0},
               'paint': {'color': 0xFFFFFFFF, 'style': 'fill'},
             },
           ],
           'position': {'x': 1.0, 'y': 2.0},
+          'anchor': {'x': 0.5, 'y': 0.5},
           'size': {'width': 10.0, 'height': 20.0},
         }),
       );
@@ -63,6 +67,27 @@ void main() {
       expect(
         copy.toJson()..remove('position'),
         equals(component.toJson()..remove('position')),
+      );
+    });
+
+    test('copyWithAnchor replaces only the anchor', () {
+      const anchor = ComponentAnchor(x: 0.25, y: 1);
+      final copy = component.copyWithAnchor(anchor);
+
+      expect(copy.anchor, equals(anchor));
+      expect(
+        copy.toJson()..remove('anchor'),
+        equals(component.toJson()..remove('anchor')),
+      );
+    });
+
+    test('is anchored at its top left corner when saved without an '
+        'anchor', () {
+      final json = component.toJson()..remove('anchor');
+
+      expect(
+        (Component.fromJson(json) as AnchoredComponent).anchor,
+        equals(ComponentAnchor.topLeft),
       );
     });
 

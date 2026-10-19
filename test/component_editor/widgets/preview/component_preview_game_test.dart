@@ -147,6 +147,23 @@ void main() {
       );
 
       testWithGame(
+        'anchors the children with their anchor',
+        () => ComponentPreviewGame(
+          component: component.copyWithChildren([
+            child.copyWithAnchor(const ComponentAnchor(x: 0.25, y: 1)),
+          ]),
+        ),
+        (game) async {
+          await game.ready();
+
+          final rendered = game.preview.children
+              .whereType<flame.PositionComponent>()
+              .single;
+          expect(rendered.anchor, equals(const flame.Anchor(0.25, 1)));
+        },
+      );
+
+      testWithGame(
         'show updates the children in place',
         () => ComponentPreviewGame(component: tree),
         (game) async {
@@ -267,15 +284,16 @@ void main() {
     });
 
     testWithGame(
-      'keeps the root centered whatever its stored position',
+      'keeps the root centered whatever its stored position and anchor',
       () => ComponentPreviewGame(
-        component: component.copyWithPosition(
-          const ComponentPosition(x: 100, y: 100),
-        ),
+        component: component
+            .copyWithPosition(const ComponentPosition(x: 100, y: 100))
+            .copyWithAnchor(ComponentAnchor.bottomRight),
       ),
       (game) async {
         await game.ready();
         expect(game.preview.position, equals(flame.Vector2.zero()));
+        expect(game.preview.anchor, equals(flame.Anchor.center));
 
         game.show(
           component.copyWithPosition(const ComponentPosition(x: 7, y: 8)),

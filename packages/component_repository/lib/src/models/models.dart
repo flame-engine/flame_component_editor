@@ -1,4 +1,5 @@
 export 'component.dart';
+export 'component_anchor.dart';
 export 'component_capabilities.dart';
 export 'component_paint.dart';
 export 'component_position.dart';

@@ -150,13 +150,13 @@ component types only declare which ones they have:
 
 | Piece | Where | Example |
 | --- | --- | --- |
-| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentSize`, `ComponentRadius`, `ComponentPaint` |
-| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `SizedComponent`, `RadiusComponent`, `PaintedComponent` |
-| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, SizedComponent`, `CircleComponent implements PositionedComponent, RadiusComponent, PaintedComponent` |
+| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentAnchor`, `ComponentSize`, `ComponentRadius`, `ComponentPaint` |
+| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `AnchoredComponent`, `SizedComponent`, `RadiusComponent`, `PaintedComponent` |
+| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, AnchoredComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, AnchoredComponent, SizedComponent`, `CircleComponent implements PositionedComponent, AnchoredComponent, RadiusComponent, PaintedComponent` |
 | Bloc event | `lib/component_editor/bloc/` | `ComponentEditorSizeChanged` (edits the selected node if it is a `SizedComponent`) |
-| Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `SizeEditor`, `RadiusEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
+| Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `PositionEditor`, `AnchorEditor`, `SizeEditor`, `RadiusEditor`, `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
 | Panel wiring | `lib/component_editor/widgets/properties_panel.dart` | `if (component case SizedComponent c) SizeEditor(...)` |
-| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applySize`, `applyRadius`, `applyPaint`, `buildFlameComponent` |
+| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applyAnchor`, `applySize`, `applyRadius`, `applyPaint`, `buildFlameComponent` |
 | Code generation | `component_repository/lib/src/code_generation/` | `ComponentCodeGenerator._flameClass` / `_arguments`, `flameMemberNames` in `dart_names.dart` |
 
 **Adding a component type:** add a `ComponentType` value, a `Component`
@@ -184,10 +184,12 @@ from the root (`[]` is the root); `ComponentTree` (`nodeAt`, `updateNodeAt`,
 edits. The editor state holds `selectedPath`, and every property event edits
 `selectedNode`. New children get a unique default name such as `rectangle1`.
 
-The position is only edited on children (`PropertiesPanel` hides it for the
-root, which is placed by whoever uses it). In the preview the root is
-centered with a center anchor (its stored position is ignored); children keep Flame's default top left anchor
-and are positioned relative to their parent. `ComponentPreviewGame.show`
+The position and the anchor are only edited on children (`PropertiesPanel`
+hides them for the root, which is placed by whoever uses it). In the preview
+the root is centered with a center anchor (its stored position and anchor
+are ignored); children use their own anchor (`ComponentAnchor`, Flame's
+default top left unless edited: one of Flame's nine named anchors or a
+custom `x`/`y`) and are positioned relative to their parent. `ComponentPreviewGame.show`
 updates the Flame components in place while the tree shape is unchanged
 (`haveSameShape`) and rebuilds them otherwise.
 
@@ -242,6 +244,10 @@ member lists in `dart_names.dart` (`flameMemberNames`). It generates:
   `class PlayerShip extends $PlayerShip`), with a
   `{super.position, super.anchor, super.priority}` constructor (the root's
   stored position is ignored, like in the preview);
+- the children's anchor as an `anchor:` argument, `Anchor.<name>` for
+  Flame's named anchors (`ComponentAnchor.presetName`) and `Anchor(x, y)`
+  otherwise, omitted for the default top left (so files generated before
+  anchors existed stay up to date);
 - **a `final` field (a getter) for every child on the component it is
   inside**, named in camelCase after the child (`left_arm` → `leftArm`),
   added in the constructor body;

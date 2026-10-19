@@ -92,6 +92,18 @@ final class ComponentEditorSizeChanged extends ComponentEditorEvent {
   List<Object> get props => [size];
 }
 
+/// The user edited the anchor of the selected [AnchoredComponent].
+final class ComponentEditorAnchorChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorAnchorChanged] event.
+  const new(this.anchor);
+
+  /// The new anchor.
+  final ComponentAnchor anchor;
+
+  @override
+  List<Object> get props => [anchor];
+}
+
 /// The user edited the radius of the selected [RadiusComponent].
 final class ComponentEditorRadiusChanged extends ComponentEditorEvent {
   /// Creates a [ComponentEditorRadiusChanged] event.

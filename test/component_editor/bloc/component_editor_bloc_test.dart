@@ -67,6 +67,22 @@ void main() {
       ],
     );
 
+    blocTest<ComponentEditorBloc, ComponentEditorState>(
+      'ComponentEditorAnchorChanged updates the anchor',
+      build: buildBloc,
+      act: (bloc) =>
+          bloc.add(const ComponentEditorAnchorChanged(ComponentAnchor.center)),
+      expect: () => const [
+        ComponentEditorState(
+          component: RectangleComponent(
+            name: 'Player',
+            anchor: ComponentAnchor.center,
+          ),
+          savedComponent: component,
+        ),
+      ],
+    );
+
     group('ComponentEditorRadiusChanged', () {
       const radius = ComponentRadius(radius: 10);
       const circle = CircleComponent(name: 'Player');

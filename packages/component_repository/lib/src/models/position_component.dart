@@ -1,15 +1,16 @@
 part of 'component.dart';
 
 /// {@template position_component}
-/// A plain component with a position and a size, that draws nothing itself:
-/// a container for its children.
+/// A plain component with a position, an anchor and a size, that draws
+/// nothing itself: a container for its children.
 /// {@endtemplate}
 final class PositionComponent extends Component
-    implements PositionedComponent, SizedComponent {
+    implements PositionedComponent, AnchoredComponent, SizedComponent {
   /// {@macro position_component}
   const new({
     required super.name,
     this.position = const ComponentPosition(),
+    this.anchor = ComponentAnchor.topLeft,
     this.size = const ComponentSize(),
     super.children,
   });
@@ -21,6 +22,7 @@ final class PositionComponent extends Component
     return PositionComponent(
       name: json['name'] as String,
       position: ComponentPosition.fromJson(json['position']),
+      anchor: ComponentAnchor.fromJson(json['anchor']),
       size: ComponentSize.fromJson(json['size']),
     );
   }
@@ -32,11 +34,19 @@ final class PositionComponent extends Component
   final ComponentPosition position;
 
   @override
+  final ComponentAnchor anchor;
+
+  @override
   final ComponentSize size;
 
   @override
   PositionComponent copyWithPosition(ComponentPosition position) {
     return _copyWith(position: position);
+  }
+
+  @override
+  PositionComponent copyWithAnchor(ComponentAnchor anchor) {
+    return _copyWith(anchor: anchor);
   }
 
   @override
@@ -55,12 +65,14 @@ final class PositionComponent extends Component
   PositionComponent _copyWith({
     String? name,
     ComponentPosition? position,
+    ComponentAnchor? anchor,
     ComponentSize? size,
     List<Component>? children,
   }) {
     return PositionComponent(
       name: name ?? this.name,
       position: position ?? this.position,
+      anchor: anchor ?? this.anchor,
       size: size ?? this.size,
       children: children ?? this.children,
     );
@@ -70,9 +82,10 @@ final class PositionComponent extends Component
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'position': position.toJson(),
+    'anchor': anchor.toJson(),
     'size': size.toJson(),
   };
 
   @override
-  List<Object> get props => [...super.props, position, size];
+  List<Object> get props => [...super.props, position, anchor, size];
 }
