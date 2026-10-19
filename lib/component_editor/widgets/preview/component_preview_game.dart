@@ -39,11 +39,12 @@ class ComponentPreviewGame extends FlameGame {
   /// Renders [component] instead of the current one, highlighting the node
   /// at [highlightedPath] (see [ComponentTree]), if any.
   ///
-  /// Only nodes with a size or a radius ([SizedComponent],
-  /// [RadiusComponent]) are highlighted.
+  /// Only nodes with a size, a radius or vertices ([SizedComponent],
+  /// [RadiusComponent], [VerticesComponent]) are highlighted.
   ///
   /// The existing Flame components are updated in place, unless components
-  /// were added, removed or changed type (see [haveSameShape]).
+  /// were added, removed or changed type, or polygons got new vertices (see
+  /// [haveSameShape]).
   void show(Component component, {List<int>? highlightedPath}) {
     final previous = _component;
     _component = component;
@@ -75,6 +76,8 @@ class ComponentPreviewGame extends FlameGame {
   }
 
   static bool _hasBounds(Component node) {
-    return node is SizedComponent || node is RadiusComponent;
+    return node is SizedComponent ||
+        node is RadiusComponent ||
+        node is VerticesComponent;
   }
 }

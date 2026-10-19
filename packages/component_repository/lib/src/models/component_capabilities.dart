@@ -71,3 +71,15 @@ abstract interface class RadiusComponent {
   /// Returns a copy of this component with [radius] replaced.
   Component copyWithRadius(ComponentRadius radius);
 }
+
+/// A [Component] that has [ComponentVertices].
+///
+/// Implemented by polygon component types, whose Flame size is the
+/// bounding box of the vertices.
+abstract interface class VerticesComponent {
+  /// The vertices of the component.
+  ComponentVertices get vertices;
+
+  /// Returns a copy of this component with [vertices] replaced.
+  Component copyWithVertices(ComponentVertices vertices);
+}

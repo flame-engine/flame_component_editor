@@ -1,11 +1,17 @@
 import 'package:component_repository/component_repository.dart';
 import 'package:flutter/material.dart';
 
-/// The name and type entered in the [AddComponentDialog].
-typedef AddComponentResult = ({String name, ComponentType type});
+/// The name, type and, for polygons, shape entered in the
+/// [AddComponentDialog].
+typedef AddComponentResult = ({
+  String name,
+  ComponentType type,
+  PolygonShape polygonShape,
+});
 
 /// {@template add_component_dialog}
-/// Asks the user for the name and type of a new component.
+/// Asks the user for the name and type of a new component, and for the
+/// shape it starts with if it is a polygon.
 ///
 /// Pops with the entered [AddComponentResult], or `null` if cancelled.
 /// {@endtemplate}
@@ -29,6 +35,7 @@ class AddComponentDialog extends StatefulWidget {
 class _AddComponentDialogState extends State<AddComponentDialog> {
   final _controller = TextEditingController();
   ComponentType _type = ComponentType.values.first;
+  PolygonShape _polygonShape = PolygonShape.triangle;
 
   @override
   void dispose() {
@@ -39,7 +46,8 @@ class _AddComponentDialogState extends State<AddComponentDialog> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) return;
-    Navigator.of(context).pop((name: name, type: _type));
+    Navigator.of(context)
+        .pop((name: name, type: _type, polygonShape: _polygonShape));
   }
 
   @override
@@ -75,6 +83,20 @@ class _AddComponentDialogState extends State<AddComponentDialog> {
                   DropdownMenuEntry(value: type, label: type.label),
               ],
             ),
+            if (_type == ComponentType.polygon)
+              DropdownMenu<PolygonShape>(
+                label: const Text('Shape'),
+                expandedInsets: EdgeInsets.zero,
+                initialSelection: _polygonShape,
+                requestFocusOnTap: false,
+                onSelected: (shape) {
+                  if (shape != null) setState(() => _polygonShape = shape);
+                },
+                dropdownMenuEntries: [
+                  for (final shape in PolygonShape.values)
+                    DropdownMenuEntry(value: shape, label: shape.label),
+                ],
+              ),
           ],
         ),
       ),

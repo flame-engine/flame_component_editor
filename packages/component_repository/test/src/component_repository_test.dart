@@ -82,6 +82,27 @@ void main() {
         ).called(1);
       });
 
+      test('creates polygons with the given shape', () async {
+        when(() => fileSystem.listFiles(directory, extension: '.json'))
+            .thenAnswer((_) async => []);
+        when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
+
+        expect(
+          await repository.createComponent(
+            projectPath,
+            'Player',
+            ComponentType.polygon,
+            polygonShape: PolygonShape.square,
+          ),
+          equals(
+            const PolygonComponent(
+              name: 'Player',
+              vertices: ComponentVertices(ComponentVertices.square),
+            ),
+          ),
+        );
+      });
+
       for (final name in [
         '',
         '1Player',

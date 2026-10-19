@@ -75,6 +75,16 @@ class PropertiesPanel extends StatelessWidget {
             onChanged: (radius) =>
                 bloc.add(ComponentEditorRadiusChanged(radius)),
           ),
+        if (component case final VerticesComponent polygon)
+          VerticesEditor(
+            value: polygon.vertices,
+            paint: switch (component) {
+              PaintedComponent(:final paint) => paint,
+              _ => const ComponentPaint(),
+            },
+            onChanged: (vertices) =>
+                bloc.add(ComponentEditorVerticesChanged(vertices)),
+          ),
         if (component case final PaintedComponent painted)
           PaintEditor(
             value: painted.paint,

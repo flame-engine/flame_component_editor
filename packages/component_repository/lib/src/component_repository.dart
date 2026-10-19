@@ -101,7 +101,8 @@ class ComponentRepository {
   }
 
   /// Creates a component of [type] called [name], with default properties,
-  /// in the project at [projectPath].
+  /// in the project at [projectPath]. Polygons start with the vertices of
+  /// [polygonShape].
   ///
   /// Throws an [InvalidComponentNameException] if [name] is not a valid
   /// identifier or doesn't make a valid class name (such as `_1`), or a
@@ -113,8 +114,9 @@ class ComponentRepository {
   Future<Component> createComponent(
     String projectPath,
     String name,
-    ComponentType type,
-  ) async {
+    ComponentType type, {
+    PolygonShape polygonShape = PolygonShape.triangle,
+  }) async {
     final className = dartClassName(name);
     if (!_validName.hasMatch(name) || !isDartIdentifier(className)) {
       throw InvalidComponentNameException(name);
@@ -138,7 +140,7 @@ class ComponentRepository {
       }
     }
 
-    final component = Component.create(name, type);
+    final component = Component.create(name, type, polygonShape: polygonShape);
     await _write(projectPath, component);
     return component;
   }

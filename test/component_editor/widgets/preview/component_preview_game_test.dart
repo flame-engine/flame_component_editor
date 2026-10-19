@@ -218,6 +218,54 @@ void main() {
       );
     });
 
+    testWithGame(
+      'renders polygons with their vertices',
+      () => ComponentPreviewGame(
+        component: const PolygonComponent(
+          name: 'Player',
+          children: [
+            PolygonComponent(
+              name: 'polygon1',
+              vertices: ComponentVertices(ComponentVertices.square),
+            ),
+          ],
+        ),
+        highlightedPath: [0],
+      ),
+      (game) async {
+        await game.ready();
+
+        final preview = game.preview as flame.PolygonComponent;
+        expect(preview.vertices, hasLength(3));
+        expect(preview.size, equals(flame.Vector2(50, 50)));
+        final child = flameNodeAt(preview, [0]) as flame.PolygonComponent;
+        expect(child.vertices, hasLength(4));
+        expect(game.highlight.target, same(child));
+      },
+    );
+
+    testWithGame(
+      'rebuilds polygons whose vertices changed',
+      () => ComponentPreviewGame(
+        component: const PolygonComponent(name: 'Player'),
+      ),
+      (game) async {
+        await game.ready();
+        final preview = game.preview;
+
+        game.show(
+          const PolygonComponent(
+            name: 'Player',
+            vertices: ComponentVertices(ComponentVertices.square),
+          ),
+        );
+        await game.ready();
+
+        expect(game.preview, isNot(same(preview)));
+        expect((game.preview as flame.PolygonComponent).vertices, hasLength(4));
+      },
+    );
+
     group('highlight', () {
       const child = RectangleComponent(name: 'rectangle1');
       final tree = component.copyWithChildren(const [child]);
@@ -296,6 +344,23 @@ void main() {
       );
       expect(
         haveSameShape(component, component.copyWithChildren(const [child])),
+        isFalse,
+      );
+      const polygon = PolygonComponent(name: 'Player');
+      expect(
+        haveSameShape(
+          polygon,
+          polygon.copyWithPaint(const ComponentPaint(color: 0xFF000000)),
+        ),
+        isTrue,
+      );
+      expect(
+        haveSameShape(
+          polygon,
+          polygon.copyWithVertices(
+            const ComponentVertices(ComponentVertices.square),
+          ),
+        ),
         isFalse,
       );
     });

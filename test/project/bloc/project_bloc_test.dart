@@ -69,6 +69,38 @@ void main() {
 
     group(ProjectComponentCreateRequested, () {
       blocTest<ProjectBloc, ProjectState>(
+        'creates polygons with the requested shape',
+        setUp: () {
+          when(
+            () => componentRepository.createComponent(
+              project.path,
+              'Player',
+              ComponentType.polygon,
+              polygonShape: PolygonShape.square,
+            ),
+          ).thenAnswer((_) async => const PolygonComponent(name: 'Player'));
+          when(() => componentRepository.getComponents(project.path))
+              .thenAnswer((_) async => []);
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(
+          const ProjectComponentCreateRequested(
+            'Player',
+            ComponentType.polygon,
+            polygonShape: PolygonShape.square,
+          ),
+        ),
+        verify: (_) => verify(
+          () => componentRepository.createComponent(
+            project.path,
+            'Player',
+            ComponentType.polygon,
+            polygonShape: PolygonShape.square,
+          ),
+        ).called(1),
+      );
+
+      blocTest<ProjectBloc, ProjectState>(
         'emits created with the new component and reloaded components',
         setUp: () {
           when(

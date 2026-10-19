@@ -15,9 +15,11 @@ final class ProjectComponentsRequested extends ProjectEvent {
 }
 
 /// The user asked to create a component of [type] called [name].
+///
+/// Polygons start with the vertices of [polygonShape].
 final class ProjectComponentCreateRequested extends ProjectEvent {
   /// Creates a [ProjectComponentCreateRequested] event.
-  const new(this.name, this.type);
+  const new(this.name, this.type, {this.polygonShape = PolygonShape.triangle});
 
   /// The name of the component to create.
   final String name;
@@ -25,8 +27,11 @@ final class ProjectComponentCreateRequested extends ProjectEvent {
   /// The type of the component to create.
   final ComponentType type;
 
+  /// The shape of the component to create, if it is a polygon.
+  final PolygonShape polygonShape;
+
   @override
-  List<Object> get props => [name, type];
+  List<Object> get props => [name, type, polygonShape];
 }
 
 /// The user confirmed that [component] should be deleted.

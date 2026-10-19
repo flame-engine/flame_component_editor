@@ -63,6 +63,7 @@ Set<String> flameMemberNames(ComponentType type) {
     ComponentType.rectangle => _rectangleComponentMembers,
     ComponentType.position => _positionComponentMembers,
     ComponentType.circle => _circleComponentMembers,
+    ComponentType.polygon => _polygonComponentMembers,
   };
 }
 
@@ -197,9 +198,14 @@ const _positionComponentMembers = {
 };
 
 /// Public members of Flame's `RectangleComponent` (Flame 2.0.0-dev.1),
+/// including the inherited ones. It adds no public instance members to
+/// `PolygonComponent`.
+const Set<String> _rectangleComponentMembers = _polygonComponentMembers;
+
+/// Public members of Flame's `PolygonComponent` (Flame 2.0.0-dev.1),
 /// including the inherited ones: the `PositionComponent` ones, plus those
-/// of `HasPaint`, `ShapeComponent` and `PolygonComponent`.
-const Set<String> _rectangleComponentMembers = {
+/// of `HasPaint` and `ShapeComponent`.
+const Set<String> _polygonComponentMembers = {
   ..._positionComponentMembers,
   'deletePaint',
   'getAlpha',

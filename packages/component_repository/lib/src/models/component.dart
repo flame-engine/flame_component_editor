@@ -2,6 +2,7 @@ import 'package:component_repository/component_repository.dart';
 import 'package:equatable/equatable.dart';
 
 part 'circle_component.dart';
+part 'polygon_component.dart';
 part 'position_component.dart';
 part 'rectangle_component.dart';
 
@@ -20,11 +21,21 @@ sealed class Component extends Equatable {
   const new({required this.name, this.children = const []});
 
   /// Creates a component of [type] called [name] with default properties.
-  factory create(String name, ComponentType type) {
+  ///
+  /// Polygons start with the vertices of [polygonShape].
+  factory create(
+    String name,
+    ComponentType type, {
+    PolygonShape polygonShape = PolygonShape.triangle,
+  }) {
     return switch (type) {
       ComponentType.rectangle => RectangleComponent(name: name),
       ComponentType.position => PositionComponent(name: name),
       ComponentType.circle => CircleComponent(name: name),
+      ComponentType.polygon => PolygonComponent(
+        name: name,
+        vertices: ComponentVertices(polygonShape.vertices),
+      ),
     };
   }
 
@@ -39,6 +50,7 @@ sealed class Component extends Equatable {
       ComponentType.rectangle => RectangleComponent._fromJson(json),
       ComponentType.position => PositionComponent._fromJson(json),
       ComponentType.circle => CircleComponent._fromJson(json),
+      ComponentType.polygon => PolygonComponent._fromJson(json),
     };
     return component.copyWithChildren(_childrenFromJson(json['children']));
   }

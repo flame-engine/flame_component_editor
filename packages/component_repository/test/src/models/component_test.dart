@@ -24,9 +24,39 @@ void main() {
           equals(const CircleComponent(name: 'Player')),
         );
       });
+
+      test('creates a triangle polygon by default', () {
+        expect(
+          Component.create('Player', ComponentType.polygon),
+          equals(const PolygonComponent(name: 'Player')),
+        );
+      });
+
+      test('creates a polygon with the given shape', () {
+        expect(
+          Component.create(
+            'Player',
+            ComponentType.polygon,
+            polygonShape: PolygonShape.square,
+          ),
+          equals(
+            const PolygonComponent(
+              name: 'Player',
+              vertices: ComponentVertices(ComponentVertices.square),
+            ),
+          ),
+        );
+      });
     });
 
     group('fromJson', () {
+      test('reads a polygon', () {
+        expect(
+          Component.fromJson(const {'name': 'Player', 'type': 'polygon'}),
+          equals(const PolygonComponent(name: 'Player')),
+        );
+      });
+
       test('reads a circle', () {
         expect(
           Component.fromJson(const {

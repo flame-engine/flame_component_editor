@@ -10,6 +10,7 @@ void main() {
       );
       expect(ComponentType.fromKey('position'), equals(ComponentType.position));
       expect(ComponentType.fromKey('circle'), equals(ComponentType.circle));
+      expect(ComponentType.fromKey('polygon'), equals(ComponentType.polygon));
     });
 
     test('fromKey returns null for unknown keys', () {

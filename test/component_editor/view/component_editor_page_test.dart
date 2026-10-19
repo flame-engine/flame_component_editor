@@ -192,6 +192,18 @@ void main() {
       ).called(1);
     });
 
+    testWidgets('edits the vertices of polygons', (tester) async {
+      const polygon = PolygonComponent(name: 'Player');
+      when(() => bloc.state).thenReturn(
+        const ComponentEditorState(component: polygon, savedComponent: polygon),
+      );
+      await tester.pumpApp(buildSubject());
+
+      expect(find.byType(SizeEditor), findsNothing);
+      expect(find.byType(VerticesEditor), findsOneWidget);
+      expect(find.byType(PaintEditor), findsOneWidget);
+    });
+
     testWidgets('edits the radius of circles', (tester) async {
       const circle = CircleComponent(name: 'Player');
       when(() => bloc.state).thenReturn(
@@ -287,6 +299,26 @@ void main() {
         verify(
           () => bloc.add(
             const ComponentEditorChildAdded(ComponentType.rectangle),
+          ),
+        ).called(1);
+      });
+
+      testWidgets('adds polygons with the picked shape', (tester) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('Add child'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.text('Polygon (triangle)'), findsOneWidget);
+        await tester.tap(find.text('Polygon (square)'));
+
+        verify(
+          () => bloc.add(
+            const ComponentEditorChildAdded(
+              ComponentType.polygon,
+              polygonShape: PolygonShape.square,
+            ),
           ),
         ).called(1);
       });

@@ -100,6 +100,35 @@ void main() {
       ],
     );
 
+    group('ComponentEditorVerticesChanged', () {
+      const vertices = ComponentVertices(ComponentVertices.square);
+      const polygon = PolygonComponent(name: 'Player');
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'updates the vertices of a polygon',
+        build: () => ComponentEditorBloc(
+          project: project,
+          component: polygon,
+          componentRepository: componentRepository,
+          projectRepository: projectRepository,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorVerticesChanged(vertices)),
+        expect: () => const [
+          ComponentEditorState(
+            component: PolygonComponent(name: 'Player', vertices: vertices),
+            savedComponent: polygon,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ignores components without vertices',
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorVerticesChanged(vertices)),
+        expect: () => const <ComponentEditorState>[],
+      );
+    });
+
     group('ComponentEditorRadiusChanged', () {
       const radius = ComponentRadius(radius: 10);
       const circle = CircleComponent(name: 'Player');
@@ -372,6 +401,27 @@ void main() {
             ),
             savedComponent: tree,
             selectedPath: [0, 0],
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorChildAdded adds polygons with the picked shape',
+        build: buildBloc,
+        act: (bloc) => bloc.add(
+          const ComponentEditorChildAdded(
+            ComponentType.polygon,
+            polygonShape: PolygonShape.square,
+          ),
+        ),
+        expect: () => [
+          isA<ComponentEditorState>().having(
+            (s) => s.selectedNode,
+            'selectedNode',
+            const PolygonComponent(
+              name: 'polygon1',
+              vertices: ComponentVertices(ComponentVertices.square),
+            ),
           ),
         ],
       );

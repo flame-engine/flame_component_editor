@@ -104,7 +104,13 @@ class ProjectView extends StatelessWidget {
     final bloc = context.read<ProjectBloc>();
     final result = await AddComponentDialog.show(context);
     if (result == null) return;
-    bloc.add(ProjectComponentCreateRequested(result.name, result.type));
+    bloc.add(
+      ProjectComponentCreateRequested(
+        result.name,
+        result.type,
+        polygonShape: result.polygonShape,
+      ),
+    );
   }
 
   Future<void> _editComponent(BuildContext context, Component component) async {
