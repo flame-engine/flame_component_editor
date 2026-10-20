@@ -93,6 +93,35 @@ extension ComponentTree on Component {
     }
   }
 
+  /// The names of the [Palette] colors the nodes of this tree paint with.
+  Set<String> get usedPaletteColors {
+    return {
+      for (final node in nodes)
+        if (node case PaintedComponent(
+          paint: ComponentPaint(:final String paletteColor),
+        ))
+          paletteColor,
+    };
+  }
+
+  /// Returns a copy of this tree whose paints have the current value of
+  /// their palette color in [palette] as their color (see
+  /// [ComponentPaint.resolvedColor]), which is what they draw with.
+  Component withPaletteColorsResolved(Palette palette) {
+    final node = switch (this) {
+      final PaintedComponent painted when painted.paint.paletteColor != null =>
+        painted.copyWithPaint(
+          painted.paint.copyWith(color: painted.paint.resolvedColor(palette)),
+        ),
+      final node => node,
+    };
+    if (children.isEmpty) return node;
+    return node.copyWithChildren([
+      for (final child in node.children)
+        child.withPaletteColorsResolved(palette),
+    ]);
+  }
+
   /// The name of the class generated for this component as the root of its
   /// tree, such as `$PlayerShip`.
   String get generatedClassName => dartRootClassName(name);

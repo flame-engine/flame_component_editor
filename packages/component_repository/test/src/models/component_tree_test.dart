@@ -59,6 +59,64 @@ void main() {
       );
     });
 
+    test('usedPaletteColors lists the palette colors of every node', () {
+      expect(tree.usedPaletteColors, isEmpty);
+      expect(
+        const RectangleComponent(
+          name: 'Player',
+          paint: ComponentPaint(paletteColor: 'primary'),
+          children: [
+            PositionComponent(
+              name: 'body',
+              children: [
+                CircleComponent(
+                  name: 'eye',
+                  paint: ComponentPaint(paletteColor: 'accent'),
+                ),
+                RectangleComponent(
+                  name: 'arm',
+                  paint: ComponentPaint(paletteColor: 'primary'),
+                ),
+              ],
+            ),
+          ],
+        ).usedPaletteColors,
+        equals({'primary', 'accent'}),
+      );
+    });
+
+    test('withPaletteColorsResolved sets the palette values as colors', () {
+      const palette = Palette(
+        colors: [PaletteColor(name: 'primary', color: 0xFF0000FF)],
+      );
+      final resolved = const RectangleComponent(
+        name: 'Player',
+        paint: ComponentPaint(color: 0xFF000000, paletteColor: 'primary'),
+        children: [
+          PositionComponent(
+            name: 'body',
+            children: [
+              CircleComponent(
+                name: 'eye',
+                paint: ComponentPaint(paletteColor: 'primary'),
+              ),
+              RectangleComponent(
+                name: 'arm',
+                paint: ComponentPaint(color: 0xFF00FF00),
+              ),
+            ],
+          ),
+        ],
+      ).withPaletteColorsResolved(palette);
+
+      int colorAt(List<int> path) =>
+          (resolved.nodeAt(path) as PaintedComponent).paint.color;
+      expect(colorAt(const []), equals(0xFF0000FF));
+      expect(colorAt(const [0, 0]), equals(0xFF0000FF));
+      expect(colorAt(const [0, 1]), equals(0xFF00FF00));
+      expect(tree.withPaletteColorsResolved(palette), equals(tree));
+    });
+
     test('uniqueChildName picks the first name that is not taken', () {
       expect(
         tree.uniqueChildName(ComponentType.rectangle),

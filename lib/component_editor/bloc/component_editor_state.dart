@@ -45,6 +45,7 @@ final class ComponentEditorState extends Equatable {
     this.takenClassNames = const {},
     this.isCodeOutdated = false,
     this.isSelectionHighlighted = true,
+    this.palette = const Palette(),
   });
 
   /// The current status.
@@ -78,6 +79,10 @@ final class ComponentEditorState extends Equatable {
   /// Whether the preview highlights the selected node, when it has a size
   /// or a radius (see [SizedComponent] and [RadiusComponent]).
   final bool isSelectionHighlighted;
+
+  /// The palette of the project, whose colors paints can use (see
+  /// [ComponentPaint.paletteColor]).
+  final Palette palette;
 
   /// Whether the component can be saved: it has changes or its code is
   /// outdated, and it is not being saved already.
@@ -120,6 +125,7 @@ final class ComponentEditorState extends Equatable {
     Map<String, Component>? takenClassNames,
     bool? isCodeOutdated,
     bool? isSelectionHighlighted,
+    Palette? palette,
   }) {
     return ComponentEditorState(
       status: status ?? this.status,
@@ -130,6 +136,7 @@ final class ComponentEditorState extends Equatable {
       isCodeOutdated: isCodeOutdated ?? this.isCodeOutdated,
       isSelectionHighlighted:
           isSelectionHighlighted ?? this.isSelectionHighlighted,
+      palette: palette ?? this.palette,
     );
   }
 
@@ -142,5 +149,6 @@ final class ComponentEditorState extends Equatable {
     takenClassNames,
     isCodeOutdated,
     isSelectionHighlighted,
+    palette,
   ];
 }

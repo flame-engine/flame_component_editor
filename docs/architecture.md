@@ -129,11 +129,12 @@ dependencies:
 | Data | `packages/key_value_storage_client` | Generic string key-value storage (`shared_preferences`) |
 | Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory/file existence, list/read/write/delete files |
 | Repository | `packages/project_repository` | `Project` and `ProjectSettings` models; pick/open projects; last 10 recent projects; read/write project settings (`<project>/.flame_editor/settings.json`) and pick a project-relative output folder |
-| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`, `ComponentVertices`…), the `PolygonShape` presets new polygons start with, capability interfaces and the `ComponentTree` extension for nested children (including child name validation); list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`); `ComponentCodeGenerator` and writing/deleting the generated Dart code (see "Code generation") |
+| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`, `ComponentVertices`…), the `PolygonShape` presets new polygons start with, capability interfaces and the `ComponentTree` extension for nested children (including child name validation); list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`); `ComponentCodeGenerator` and writing/deleting the generated Dart code (see "Code generation"); the project's `Palette` (`<project>/.flame_editor/palette.json`) and its `PaletteCodeGenerator` (see "Palette") |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
 | Bloc + view | `lib/project/` | Project dashboard: lists components, add (name + type dialog → editor), edit, delete (with confirmation; also deletes the generated code), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
-| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: component tree (left, add/remove children, root selected by default), Flame preview (center, magenta border around the selected node; a toolbar above it toggles that highlight), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
+| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: a top bar (`EditorTopBar`, below the app bar, above the three panels) for project-wide actions (the palette button), component tree (left, add/remove children, root selected by default), Flame preview (center, magenta border around the selected node; a toolbar above it toggles that highlight), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
 | Bloc + view | `lib/vertices_editor/` | Vertices editor dialog, `VerticesEditorDialog.show(context, vertices:, paint:)`: a `CustomPaint` canvas (`VerticesCanvas`, `VerticesPainter`) where the user drags vertices, adds one from the "+" handle in the middle of an edge, and deletes the selected one (Delete/Backspace, context menu or button; at least 3 are kept). A side bar (`VerticesList`) has X/Y fields per vertex to type exact coordinates, and a delete button per row; selecting a row or focusing its fields selects the vertex. `VerticesEditorCubit` edits a working copy; Apply returns it normalized, Cancel/Esc returns `null`. `VerticesViewTransform` maps local coordinates to the canvas (fitted once when the dialog opens) and does the hit testing |
+| Bloc + view | `lib/palette/` | Palette dialog, `PaletteDialog.show(context, project:, component:)` (opened from the editor's top bar; returns the saved `Palette` or `null`): add, rename, change and remove named colors; colors used by a component (including the unsaved edits of the open one) can't be renamed or removed. `PaletteBloc` saves the palette and generates its code |
 | Bloc + view | `lib/project_settings/` | Project settings dialog, `ProjectSettingsDialog.show(context, project)`: output path for generated Dart code (default `lib/components`, text field + Browse) |
 
 `project_repository` and `component_repository` have no Flutter imports, but
@@ -244,6 +245,48 @@ The preview `GameWidget` is created with `autofocus: false`: a focused
 shortcuts. Widget tests that show the preview can't use `pumpAndSettle` (the
 game loop never settles), so use `tester.pumpRouteTransition()` from
 `test/helpers`.
+
+### Palette
+
+A project has one `Palette`: an ordered list of named colors
+(`PaletteColor`), stored in `<project>/.flame_editor/palette.json` and read
+and written by `ComponentRepository` (`getPalette`, `savePalette`,
+`writePaletteCode`). It lives in `component_repository` because component
+code references it, components can't take its file name, and "in use" is
+computed from the components; a separate repository would have to depend on
+this one.
+
+- **Names** are their generated member names, so they are validated like
+  child names (`Palette.validateColorName`, `PaletteColorNameError`): a valid
+  identifier, not a keyword, unique after camelCase normalization.
+- **Paints reference colors by name**: `ComponentPaint.paletteColor`. Its
+  `color` keeps the value the palette color had when it was picked, as a
+  fallback when the palette doesn't have it (`resolvedColor(palette)`).
+  `withColor` (picked by hand) clears the reference; `withPaletteColor`
+  sets it. `paletteColor` is only written to JSON when set.
+- **Editing**: `ColorField` gets a palette button (a menu of the colors)
+  when it is given a palette and `onPaletteColorSelected`; `PaintEditor`
+  wires it. The editor bloc loads the palette on `ComponentEditorStarted`
+  and gets the saved one from the dialog with
+  `ComponentEditorPaletteChanged`; the preview draws
+  `component.withPaletteColorsResolved(palette)`. Palette changes are not
+  component changes (`hasChanges` is unaffected).
+- **Colors in use can't be renamed or removed** (`PaletteState.usersOf`,
+  `ComponentTree.usedPaletteColors`); their value can change. That keeps
+  every reference in saved components and generated code valid.
+- **Code**: `PaletteCodeGenerator` writes
+  `<outputPath>/palette.generated.dart` with
+  `abstract final class GamePalette { static const primary = Color(…); }`
+  (no `$` prefix: generated component classes all have one, so they never
+  clash). Component code uses `Paint()..color = GamePalette.primary` and
+  imports `palette.generated.dart` for colors the palette has; missing ones
+  fall back to the inline value. `writeComponentCode` also rewrites the
+  palette file when the component uses it, so the import always resolves
+  (e.g. after the output path changed), and `isComponentCodeUpToDate`
+  compares against code generated with the current palette. Components named
+  `palette` (any name whose file is `palette`) are rejected on creation, and
+  an older one's code is never written over the palette's
+  (`GeneratedFileConflictException`).
 
 ### Code generation
 

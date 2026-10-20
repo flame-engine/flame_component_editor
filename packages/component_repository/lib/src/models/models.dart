@@ -10,4 +10,5 @@ export 'component_tree.dart';
 export 'component_type.dart';
 export 'component_vertices.dart';
 export 'paint_style.dart';
+export 'palette.dart';
 export 'polygon_shape.dart';

@@ -19,9 +19,13 @@ class PropertiesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (component, selectedPath) = context
-        .select<ComponentEditorBloc, (Component, List<int>)>(
-          (bloc) => (bloc.state.selectedNode, bloc.state.selectedPath),
+    final (component, selectedPath, palette) = context
+        .select<ComponentEditorBloc, (Component, List<int>, Palette)>(
+          (bloc) => (
+            bloc.state.selectedNode,
+            bloc.state.selectedPath,
+            bloc.state.palette,
+          ),
         );
     final bloc = context.read<ComponentEditorBloc>();
     final isRoot = selectedPath.isEmpty;
@@ -79,7 +83,9 @@ class PropertiesPanel extends StatelessWidget {
           VerticesEditor(
             value: polygon.vertices,
             paint: switch (component) {
-              PaintedComponent(:final paint) => paint,
+              PaintedComponent(:final paint) => paint.copyWith(
+                color: paint.resolvedColor(palette),
+              ),
               _ => const ComponentPaint(),
             },
             onChanged: (vertices) =>
@@ -88,6 +94,7 @@ class PropertiesPanel extends StatelessWidget {
         if (component case final PaintedComponent painted)
           PaintEditor(
             value: painted.paint,
+            palette: palette,
             onChanged: (paint) => bloc.add(ComponentEditorPaintChanged(paint)),
           ),
       ],

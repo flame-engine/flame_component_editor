@@ -157,6 +157,18 @@ final class ComponentEditorPaintChanged extends ComponentEditorEvent {
   List<Object> get props => [paint];
 }
 
+/// The palette of the project changed, e.g. in the palette dialog.
+final class ComponentEditorPaletteChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorPaletteChanged] event.
+  const new(this.palette);
+
+  /// The new palette.
+  final Palette palette;
+
+  @override
+  List<Object> get props => [palette];
+}
+
 /// The user toggled the highlight of the selected node in the preview.
 final class ComponentEditorSelectionHighlightToggled
     extends ComponentEditorEvent {

@@ -54,8 +54,15 @@ three pass.
 - Features: `home` (open project + recent projects), `project` (dashboard:
   list/add/edit/delete components; adding asks for a name and a component
   type), `project_settings` (settings dialog: generated code output path,
-  stored in `<project>/.flame_editor/settings.json`) and `component_editor`
-  (component tree on the left to add/remove/select/rename nested children,
+  stored in `<project>/.flame_editor/settings.json`), `palette` (dialog to
+  manage the project's named colors, stored in
+  `<project>/.flame_editor/palette.json` and generated as `GamePalette` in
+  `palette.generated.dart`; paint colors can be picked from it and their
+  generated code references `GamePalette.<name>`; colors in use can't be
+  renamed or removed — see "Palette" in
+  [docs/architecture.md](docs/architecture.md)) and `component_editor`
+  (a top bar below the app bar for project-wide actions — the palette
+  button —, component tree on the left to add/remove/select/rename nested children,
   live Flame preview in the center, with a toolbar above it whose toggle
   highlights the selected node with a magenta border, properties of the selected node on the
   right, explicit save with button or Cmd/Ctrl+S, unsaved-changes prompt when

@@ -10,7 +10,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// {@template component_editor_view}
 /// Shows the tree of the component being edited on the left, its preview
 /// in the center, below a toolbar, and the properties of the selected node
-/// on the right.
+/// on the right, below a top bar with the project actions (such as the
+/// palette).
 ///
 /// Changes are saved with the save button or Cmd/Ctrl+S.
 /// {@endtemplate}
@@ -62,25 +63,37 @@ class ComponentEditorView extends StatelessWidget {
                 title: const _Title(),
                 actions: [_SaveButton(onPressed: save)],
               ),
-              body: const Row(
+              body: const Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(width: treePanelWidth, child: ComponentTreePanel()),
-                  VerticalDivider(width: 1),
+                  EditorTopBar(),
+                  Divider(height: 1),
                   Expanded(
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        EditorToolbar(),
-                        Divider(height: 1),
-                        Expanded(child: ComponentPreview()),
+                        SizedBox(
+                          width: treePanelWidth,
+                          child: ComponentTreePanel(),
+                        ),
+                        VerticalDivider(width: 1),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              EditorToolbar(),
+                              Divider(height: 1),
+                              Expanded(child: ComponentPreview()),
+                            ],
+                          ),
+                        ),
+                        VerticalDivider(width: 1),
+                        SizedBox(
+                          width: propertiesPanelWidth,
+                          child: PropertiesPanel(),
+                        ),
                       ],
                     ),
-                  ),
-                  VerticalDivider(width: 1),
-                  SizedBox(
-                    width: propertiesPanelWidth,
-                    child: PropertiesPanel(),
                   ),
                 ],
               ),

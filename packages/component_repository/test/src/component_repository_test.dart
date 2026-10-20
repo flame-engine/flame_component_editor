@@ -20,9 +20,21 @@ void main() {
     late FileSystemClient fileSystem;
     late ComponentRepository repository;
 
+    final paletteFile = p.join(projectPath, ComponentRepository.paletteFile);
+    final paletteCodeFile = p.join(
+      projectPath,
+      'lib/components',
+      PaletteCodeGenerator.fileName,
+    );
+    const palette = Palette(
+      colors: [PaletteColor(name: 'primary', color: 0xFFFF0000)],
+    );
+
     setUp(() {
       fileSystem = _MockFileSystemClient();
       repository = ComponentRepository(fileSystem: fileSystem);
+      when(() => fileSystem.fileExists(paletteFile))
+          .thenAnswer((_) async => false);
     });
 
     group('getComponents', () {
@@ -111,6 +123,9 @@ void main() {
         '../x',
         '_',
         '_1',
+        // Its code would take the place of the palette's.
+        'palette',
+        'Palette',
       ]) {
         test('throws InvalidComponentNameException for "$name"', () {
           expect(
@@ -263,6 +278,145 @@ void main() {
               codeFile,
             ),
           ),
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+
+      test('throws GeneratedFileConflictException for a component whose '
+          'code would replace the palette', () async {
+        await expectLater(
+          repository.writeComponentCode(
+            projectPath,
+            'lib/components',
+            const RectangleComponent(name: 'palette'),
+          ),
+          throwsA(isA<GeneratedFileConflictException>()),
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+
+      test('references the palette and writes its code when the component '
+          'uses it', () async {
+        const painted = RectangleComponent(
+          name: 'PlayerShip',
+          paint: ComponentPaint(paletteColor: 'primary'),
+        );
+        when(() => fileSystem.fileExists(paletteFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(paletteFile))
+            .thenAnswer((_) async => jsonEncode(palette.toJson()));
+        when(() => fileSystem.fileExists(codeFile))
+            .thenAnswer((_) async => false);
+        when(() => fileSystem.fileExists(paletteCodeFile))
+            .thenAnswer((_) async => false);
+
+        await repository.writeComponentCode(
+          projectPath,
+          'lib/components',
+          painted,
+        );
+
+        verify(
+          () => fileSystem.writeFile(
+            paletteCodeFile,
+            const PaletteCodeGenerator().generate(palette),
+          ),
+        ).called(1);
+        verify(
+          () => fileSystem.writeFile(
+            codeFile,
+            generator.generate(painted, palette: palette),
+          ),
+        ).called(1);
+      });
+    });
+
+    group('getPalette', () {
+      test('returns the stored palette', () async {
+        when(() => fileSystem.fileExists(paletteFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(paletteFile))
+            .thenAnswer((_) async => jsonEncode(palette.toJson()));
+
+        expect(await repository.getPalette(projectPath), equals(palette));
+      });
+
+      test('returns an empty palette when none was saved', () async {
+        expect(
+          await repository.getPalette(projectPath),
+          equals(const Palette()),
+        );
+      });
+
+      test('returns an empty palette when unreadable', () async {
+        when(() => fileSystem.fileExists(paletteFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(paletteFile))
+            .thenAnswer((_) async => 'not json');
+
+        expect(
+          await repository.getPalette(projectPath),
+          equals(const Palette()),
+        );
+      });
+    });
+
+    group('savePalette', () {
+      test('writes the palette file', () async {
+        when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
+
+        await repository.savePalette(projectPath, palette);
+
+        verify(
+          () => fileSystem.writeFile(paletteFile, jsonEncode(palette.toJson())),
+        ).called(1);
+      });
+
+      test('throws InvalidPaletteException for invalid names', () async {
+        await expectLater(
+          repository.savePalette(
+            projectPath,
+            const Palette(colors: [PaletteColor(name: 'class', color: 0)]),
+          ),
+          throwsA(isA<InvalidPaletteException>()),
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+    });
+
+    group('writePaletteCode', () {
+      setUp(() {
+        when(() => fileSystem.writeFile(any(), any())).thenAnswer((_) async {});
+      });
+
+      test('writes the generated code to the output folder', () async {
+        when(() => fileSystem.fileExists(paletteCodeFile))
+            .thenAnswer((_) async => false);
+
+        await repository.writePaletteCode(
+          projectPath,
+          'lib/components',
+          palette,
+        );
+
+        verify(
+          () => fileSystem.writeFile(
+            paletteCodeFile,
+            const PaletteCodeGenerator().generate(palette),
+          ),
+        ).called(1);
+      });
+
+      test('throws GeneratedFileConflictException and keeps a file that was '
+          'not generated', () async {
+        when(() => fileSystem.fileExists(paletteCodeFile))
+            .thenAnswer((_) async => true);
+        when(() => fileSystem.readFile(paletteCodeFile))
+            .thenAnswer((_) async => 'class GamePalette {}');
+
+        await expectLater(
+          repository.writePaletteCode(projectPath, 'lib/components', palette),
+          throwsA(isA<GeneratedFileConflictException>()),
         );
         verifyNever(() => fileSystem.writeFile(any(), any()));
       });

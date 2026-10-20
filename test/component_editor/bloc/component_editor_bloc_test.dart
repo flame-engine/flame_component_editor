@@ -22,6 +22,9 @@ void main() {
     const size = ComponentSize(width: 10, height: 20);
     const paint = ComponentPaint(color: 0xFFFF0000, style: PaintStyle.stroke);
     const edited = RectangleComponent(name: 'Player', size: size);
+    const palette = Palette(
+      colors: [PaletteColor(name: 'primary', color: 0xFF00FF00)],
+    );
 
     late ComponentRepository componentRepository;
     late ProjectRepository projectRepository;
@@ -32,6 +35,8 @@ void main() {
       when(
         () => projectRepository.getSettings(project),
       ).thenAnswer((_) async => const ProjectSettings(outputPath: 'lib/game'));
+      when(() => componentRepository.getPalette(project.path))
+          .thenAnswer((_) async => const Palette());
     });
 
     ComponentEditorBloc buildBloc() => ComponentEditorBloc(
@@ -342,6 +347,77 @@ void main() {
         act: (bloc) => bloc.add(const ComponentEditorStarted()),
         expect: () => const <ComponentEditorState>[],
       );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'loads the palette',
+        setUp: () {
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: true);
+          when(() => componentRepository.getPalette(project.path))
+              .thenAnswer((_) async => palette);
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        expect: () => const [
+          ComponentEditorState(
+            component: component,
+            savedComponent: component,
+            palette: palette,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'keeps a palette changed while loading',
+        setUp: () {
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: true);
+          when(() => componentRepository.getPalette(project.path))
+              .thenAnswer((_) async => const Palette());
+        },
+        build: buildBloc,
+        act: (bloc) => bloc
+          ..add(const ComponentEditorPaletteChanged(palette))
+          ..add(const ComponentEditorStarted()),
+        expect: () => const [
+          ComponentEditorState(
+            component: component,
+            savedComponent: component,
+            palette: palette,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'keeps an empty palette when it can not be loaded',
+        setUp: () {
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: true);
+          when(() => componentRepository.getPalette(project.path))
+              .thenThrow(Exception());
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        verify: (bloc) => expect(bloc.state.palette, equals(const Palette())),
+      );
+    });
+
+    blocTest<ComponentEditorBloc, ComponentEditorState>(
+      'ComponentEditorPaletteChanged replaces the palette without changes',
+      build: buildBloc,
+      act: (bloc) => bloc.add(const ComponentEditorPaletteChanged(palette)),
+      expect: () => const [
+        ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          palette: palette,
+        ),
+      ],
+      verify: (bloc) => expect(bloc.state.hasChanges, isFalse),
+    );
+
+    test('exposes the project', () {
+      expect(buildBloc().project, equals(project));
     });
 
     group('component tree', () {
