@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:component_repository/component_repository.dart';
 import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
 import 'package:flame_component_editor/component_editor/widgets/widgets.dart';
+import 'package:flame_component_editor/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +15,9 @@ import 'package:project_repository/project_repository.dart';
 /// on the right, below a top bar with the project actions (such as the
 /// palette).
 ///
-/// Changes are saved with the save button or Cmd/Ctrl+S.
+/// Changes are saved with the save button or Cmd/Ctrl+S. The preview zooms
+/// in with Cmd/Ctrl+=, out with Cmd/Ctrl+- and back to 100% with
+/// Cmd/Ctrl+0.
 /// {@endtemplate}
 class ComponentEditorView extends StatelessWidget {
   /// {@macro component_editor_view}
@@ -31,9 +34,11 @@ class ComponentEditorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void save() => context.read<ComponentEditorBloc>().add(
-      const ComponentEditorSaveRequested(),
-    );
+    final bloc = context.read<ComponentEditorBloc>();
+    void save() => bloc.add(const ComponentEditorSaveRequested());
+    void zoomIn() => bloc.add(const ComponentEditorZoomedIn());
+    void zoomOut() => bloc.add(const ComponentEditorZoomedOut());
+    void resetZoom() => bloc.add(const ComponentEditorZoomReset());
 
     return BlocListener<ComponentEditorBloc, ComponentEditorState>(
       listenWhen: (previous, current) => previous.status != current.status,
@@ -58,6 +63,11 @@ class ComponentEditorView extends StatelessWidget {
         bindings: {
           const SingleActivator(LogicalKeyboardKey.keyS, meta: true): save,
           const SingleActivator(LogicalKeyboardKey.keyS, control: true): save,
+          ...zoomShortcuts(
+            onZoomIn: zoomIn,
+            onZoomOut: zoomOut,
+            onReset: resetZoom,
+          ),
         },
         child: _UnsavedChangesGuard(
           child: Focus(

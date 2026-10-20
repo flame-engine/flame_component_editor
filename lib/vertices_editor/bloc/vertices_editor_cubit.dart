@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:component_repository/component_repository.dart';
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:equatable/equatable.dart';
 
 part 'vertices_editor_state.dart';
@@ -7,6 +8,9 @@ part 'vertices_editor_state.dart';
 /// {@template vertices_editor_cubit}
 /// Edits a working copy of the vertices of a polygon, which the vertices
 /// editor dialog returns when the user applies the changes.
+///
+/// Also holds the zoom of the canvas, which is not remembered: the dialog
+/// opens fitting the polygon again every time.
 /// {@endtemplate}
 class VerticesEditorCubit extends Cubit<VerticesEditorState> {
   /// {@macro vertices_editor_cubit}
@@ -64,4 +68,20 @@ class VerticesEditorCubit extends Cubit<VerticesEditorState> {
       ),
     );
   }
+
+  /// Zooms the canvas in to the next of the [ZoomLevels], if any.
+  void zoomedIn() {
+    final zoom = ZoomLevels.next(state.zoom);
+    if (zoom != null) emit(state.copyWith(zoom: zoom));
+  }
+
+  /// Zooms the canvas out to the previous of the [ZoomLevels], if any.
+  void zoomedOut() {
+    final zoom = ZoomLevels.previous(state.zoom);
+    if (zoom != null) emit(state.copyWith(zoom: zoom));
+  }
+
+  /// Resets the zoom of the canvas, showing the polygon as it was fitted
+  /// when the dialog opened.
+  void zoomReset() => emit(state.copyWith(zoom: 1));
 }

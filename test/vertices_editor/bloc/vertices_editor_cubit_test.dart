@@ -148,5 +148,64 @@ void main() {
 
       expect(cubit.state.hasChanges, isFalse);
     });
+
+    group('zoom', () {
+      test('starts at 100%', () {
+        final state = VerticesEditorCubit(square).state;
+
+        expect(state.zoom, equals(1));
+        expect(state.canZoomIn, isTrue);
+        expect(state.canZoomOut, isTrue);
+      });
+
+      blocTest<VerticesEditorCubit, VerticesEditorState>(
+        'zoomedIn, zoomedOut and zoomReset change the zoom',
+        build: () => VerticesEditorCubit(square),
+        act: (cubit) => cubit
+          ..zoomedIn()
+          ..zoomedIn()
+          ..zoomReset()
+          ..zoomedOut(),
+        expect: () => [
+          isA<VerticesEditorState>().having((s) => s.zoom, 'zoom', 1.5),
+          isA<VerticesEditorState>().having((s) => s.zoom, 'zoom', 2),
+          isA<VerticesEditorState>().having((s) => s.zoom, 'zoom', 1),
+          isA<VerticesEditorState>().having((s) => s.zoom, 'zoom', 0.75),
+        ],
+      );
+
+      blocTest<VerticesEditorCubit, VerticesEditorState>(
+        'does not zoom past the largest and smallest levels',
+        build: () => VerticesEditorCubit(square),
+        seed: () => VerticesEditorState(initial: square, zoom: 8),
+        act: (cubit) => cubit.zoomedIn(),
+        expect: () => const <VerticesEditorState>[],
+        verify: (cubit) {
+          expect(cubit.state.canZoomIn, isFalse);
+          expect(
+            VerticesEditorState(initial: square, zoom: 0.1).canZoomOut,
+            isFalse,
+          );
+        },
+      );
+
+      blocTest<VerticesEditorCubit, VerticesEditorState>(
+        'zooming keeps the edits',
+        build: () => VerticesEditorCubit(square),
+        act: (cubit) => cubit
+          ..vertexMoved(0, 5, 5)
+          ..zoomedIn(),
+        skip: 1,
+        expect: () => [
+          isA<VerticesEditorState>()
+              .having((s) => s.zoom, 'zoom', 1.5)
+              .having(
+                (s) => s.vertices.first,
+                'vertex',
+                const ComponentVertex(5, 5),
+              ),
+        ],
+      );
+    });
   });
 }

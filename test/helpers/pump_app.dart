@@ -1,4 +1,5 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,25 @@ class _MockProjectRepository extends Mock implements ProjectRepository;
 
 class _MockComponentRepository extends Mock implements ComponentRepository;
 
+class _MockEditorPreferencesRepository extends Mock
+    implements EditorPreferencesRepository {
+  new() {
+    when(
+      () => getComponentZoom(
+        projectPath: any(named: 'projectPath'),
+        componentName: any(named: 'componentName'),
+      ),
+    ).thenAnswer((_) async => EditorPreferencesRepository.defaultZoom);
+    when(
+      () => setComponentZoom(
+        projectPath: any(named: 'projectPath'),
+        componentName: any(named: 'componentName'),
+        zoom: any(named: 'zoom'),
+      ),
+    ).thenAnswer((_) async {});
+  }
+}
+
 extension PumpApp on WidgetTester {
   /// Pumps [widget] wrapped in the app-level dependencies (theme, providers).
   ///
@@ -18,6 +38,7 @@ extension PumpApp on WidgetTester {
     Widget widget, {
     ProjectRepository? projectRepository,
     ComponentRepository? componentRepository,
+    EditorPreferencesRepository? editorPreferencesRepository,
   }) {
     return pumpWidget(
       MultiRepositoryProvider(
@@ -27,6 +48,11 @@ extension PumpApp on WidgetTester {
           ),
           RepositoryProvider.value(
             value: componentRepository ?? _MockComponentRepository(),
+          ),
+          RepositoryProvider.value(
+            value:
+                editorPreferencesRepository ??
+                _MockEditorPreferencesRepository(),
           ),
         ],
         child: MaterialApp(home: widget),

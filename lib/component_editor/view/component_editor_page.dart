@@ -1,4 +1,5 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
 import 'package:flame_component_editor/component_editor/view/component_editor_view.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,8 @@ class ComponentEditorPage extends StatelessWidget {
         component: component,
         componentRepository: context.read<ComponentRepository>(),
         projectRepository: context.read<ProjectRepository>(),
+        editorPreferencesRepository: context
+            .read<EditorPreferencesRepository>(),
       )..add(const ComponentEditorStarted()),
       child: ComponentEditorView(project: project),
     );

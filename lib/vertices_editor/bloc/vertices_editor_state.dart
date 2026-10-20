@@ -7,6 +7,7 @@ final class VerticesEditorState extends Equatable {
     required this.initial,
     List<ComponentVertex>? vertices,
     this.selectedIndex,
+    this.zoom = 1,
   }) : vertices = vertices ?? initial.vertices;
 
   /// The vertices the editor opened with.
@@ -17,6 +18,16 @@ final class VerticesEditorState extends Equatable {
 
   /// The index of the selected vertex in [vertices], if any.
   final int? selectedIndex;
+
+  /// The zoom of the canvas, relative to the scale that fits the polygon
+  /// in it (see `VerticesViewTransform.fit`), around its center.
+  final double zoom;
+
+  /// Whether the canvas can zoom in further.
+  bool get canZoomIn => ZoomLevels.next(zoom) != null;
+
+  /// Whether the canvas can zoom out further.
+  bool get canZoomOut => ZoomLevels.previous(zoom) != null;
 
   /// Whether a vertex can be deleted: a polygon needs at least
   /// [ComponentVertices.minLength] vertices.
@@ -33,6 +44,7 @@ final class VerticesEditorState extends Equatable {
   VerticesEditorState copyWith({
     List<ComponentVertex>? vertices,
     int? Function()? selectedIndex,
+    double? zoom,
   }) {
     return VerticesEditorState(
       initial: initial,
@@ -40,9 +52,10 @@ final class VerticesEditorState extends Equatable {
       selectedIndex: selectedIndex != null
           ? selectedIndex()
           : this.selectedIndex,
+      zoom: zoom ?? this.zoom,
     );
   }
 
   @override
-  List<Object?> get props => [initial, vertices, selectedIndex];
+  List<Object?> get props => [initial, vertices, selectedIndex, zoom];
 }

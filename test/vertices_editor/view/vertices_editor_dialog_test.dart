@@ -80,6 +80,74 @@ void main() {
       expect(result, isNull);
     });
 
+    group('zoom', () {
+      VerticesViewTransform transform(WidgetTester tester) =>
+          (tester.widget<CustomPaint>(canvas()).painter! as VerticesPainter)
+              .transform;
+
+      testWidgets('zooms the canvas with the buttons', (tester) async {
+        await openDialog(tester);
+        final fitted = transform(tester);
+        expect(find.text('100%'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Zoom in'));
+        await tester.pump();
+        expect(find.text('150%'), findsOneWidget);
+        expect(transform(tester).scale, equals(fitted.scale * 1.5));
+
+        await tester.tap(find.byTooltip('Zoom out'));
+        await tester.tap(find.byTooltip('Zoom out'));
+        await tester.pump();
+        expect(find.text('75%'), findsOneWidget);
+
+        await tester.tap(find.text('75%'));
+        await tester.pump();
+        expect(transform(tester), equals(fitted));
+      });
+
+      testWidgets('zooms the canvas with the keyboard', (tester) async {
+        await openDialog(tester);
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.equal);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+        await tester.pump();
+        expect(find.text('150%'), findsOneWidget);
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.minus);
+        await tester.sendKeyEvent(LogicalKeyboardKey.minus);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pump();
+        expect(find.text('75%'), findsOneWidget);
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.digit0);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+        await tester.pump();
+        expect(find.text('100%'), findsOneWidget);
+      });
+
+      testWidgets('drags vertices on the zoomed canvas', (tester) async {
+        await openDialog(tester);
+        await tester.tap(find.byTooltip('Zoom in'));
+        await tester.tap(find.byTooltip('Zoom in'));
+        await tester.pump();
+        final zoomed = transform(tester);
+
+        // 2x zoom: 60 pixels are 30 local units.
+        await tester.dragFrom(
+          tester.getTopLeft(canvas()) +
+              zoomed.toCanvas(const ComponentVertex(50, 50)),
+          const Offset(60, 20),
+        );
+        await tester.pump();
+        await apply(tester);
+
+        expect(result!.vertices[2], equals(const ComponentVertex(80, 60)));
+      });
+    });
+
     testWidgets('selects a vertex when it is tapped', (tester) async {
       await openDialog(tester);
 

@@ -1,0 +1,19 @@
+name: editor_preferences_repository
+description: Repository for the editor preferences, such as the zoom of each component.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  key_value_storage_client:
+    path: ../key_value_storage_client
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.5
+  very_good_analysis: ^11.0.0

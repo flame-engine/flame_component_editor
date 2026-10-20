@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:component_repository/component_repository.dart';
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:flame_component_editor/component_editor/component_editor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -10,6 +11,9 @@ import 'package:project_repository/project_repository.dart';
 class _MockComponentRepository extends Mock implements ComponentRepository;
 
 class _MockProjectRepository extends Mock implements ProjectRepository;
+
+class _MockEditorPreferencesRepository extends Mock
+    implements EditorPreferencesRepository;
 
 void main() {
   setUpAll(
@@ -28,8 +32,27 @@ void main() {
 
     late ComponentRepository componentRepository;
     late ProjectRepository projectRepository;
+    late EditorPreferencesRepository editorPreferencesRepository;
+
+    void stubStoredZoom(double zoom) {
+      when(
+        () => editorPreferencesRepository.getComponentZoom(
+          projectPath: project.path,
+          componentName: component.name,
+        ),
+      ).thenAnswer((_) async => zoom);
+    }
 
     setUp(() {
+      editorPreferencesRepository = _MockEditorPreferencesRepository();
+      stubStoredZoom(EditorPreferencesRepository.defaultZoom);
+      when(
+        () => editorPreferencesRepository.setComponentZoom(
+          projectPath: any(named: 'projectPath'),
+          componentName: any(named: 'componentName'),
+          zoom: any(named: 'zoom'),
+        ),
+      ).thenAnswer((_) async {});
       componentRepository = _MockComponentRepository();
       projectRepository = _MockProjectRepository();
       when(
@@ -44,6 +67,7 @@ void main() {
       component: component,
       componentRepository: componentRepository,
       projectRepository: projectRepository,
+      editorPreferencesRepository: editorPreferencesRepository,
     );
 
     test('initial state has no changes', () {
@@ -116,6 +140,7 @@ void main() {
           component: polygon,
           componentRepository: componentRepository,
           projectRepository: projectRepository,
+          editorPreferencesRepository: editorPreferencesRepository,
         ),
         act: (bloc) => bloc.add(const ComponentEditorVerticesChanged(vertices)),
         expect: () => const [
@@ -145,6 +170,7 @@ void main() {
           component: circle,
           componentRepository: componentRepository,
           projectRepository: projectRepository,
+          editorPreferencesRepository: editorPreferencesRepository,
         ),
         act: (bloc) => bloc.add(const ComponentEditorRadiusChanged(radius)),
         expect: () => const [
@@ -195,6 +221,114 @@ void main() {
       ],
     );
 
+    group('zoom', () {
+      void verifyZoomStored(double zoom) {
+        verify(
+          () => editorPreferencesRepository.setComponentZoom(
+            projectPath: project.path,
+            componentName: component.name,
+            zoom: zoom,
+          ),
+        ).called(1);
+      }
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorZoomedIn steps to the next level and stores it',
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorZoomedIn()),
+        expect: () => [
+          isA<ComponentEditorState>()
+              .having((s) => s.zoom, 'zoom', 1.5)
+              .having((s) => s.hasChanges, 'hasChanges', isFalse)
+              .having((s) => s.status, 'status', ComponentEditorStatus.ready),
+        ],
+        verify: (_) => verifyZoomStored(1.5),
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorZoomedOut steps to the previous level and stores it',
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorZoomedOut()),
+        expect: () => [
+          isA<ComponentEditorState>().having((s) => s.zoom, 'zoom', 0.75),
+        ],
+        verify: (_) => verifyZoomStored(0.75),
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'steps from a zoom between levels to the nearest ones',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          zoom: 1.2,
+        ),
+        act: (bloc) => bloc
+          ..add(const ComponentEditorZoomedIn())
+          ..add(const ComponentEditorZoomReset())
+          ..add(const ComponentEditorZoomedOut()),
+        expect: () => [
+          isA<ComponentEditorState>().having((s) => s.zoom, 'zoom', 1.5),
+          isA<ComponentEditorState>().having((s) => s.zoom, 'zoom', 1),
+          isA<ComponentEditorState>().having((s) => s.zoom, 'zoom', 0.75),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'does not zoom past the largest and smallest levels',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          zoom: EditorPreferencesRepository.maxZoom,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorZoomedIn()),
+        expect: () => const <ComponentEditorState>[],
+        verify: (bloc) {
+          expect(bloc.state.nextZoom, isNull);
+          expect(
+            const ComponentEditorState(
+              component: component,
+              savedComponent: component,
+              zoom: EditorPreferencesRepository.minZoom,
+            ).previousZoom,
+            isNull,
+          );
+        },
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorZoomReset goes back to 100% and stores it',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          zoom: 3,
+        ),
+        act: (bloc) => bloc.add(const ComponentEditorZoomReset()),
+        expect: () => const [
+          ComponentEditorState(component: component, savedComponent: component),
+        ],
+        verify: (_) => verifyZoomStored(1),
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'still zooms when the zoom cannot be stored',
+        setUp: () => when(
+          () => editorPreferencesRepository.setComponentZoom(
+            projectPath: any(named: 'projectPath'),
+            componentName: any(named: 'componentName'),
+            zoom: any(named: 'zoom'),
+          ),
+        ).thenThrow(Exception('oops')),
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorZoomedIn()),
+        expect: () => [
+          isA<ComponentEditorState>().having((s) => s.zoom, 'zoom', 1.5),
+        ],
+      );
+    });
+
     test('rootClassOwner is the other component generating the root '
         'class', () {
       const aB = RectangleComponent(name: 'a_b');
@@ -236,6 +370,66 @@ void main() {
           ),
         ).thenAnswer((_) async => isUpToDate);
       }
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'loads the stored zoom of the component',
+        setUp: () {
+          stubStoredZoom(2);
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: true);
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        expect: () => const [
+          ComponentEditorState(
+            component: component,
+            savedComponent: component,
+            zoom: 2,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'keeps a zoom changed while the stored one loads',
+        setUp: () {
+          final completer = Completer<double>();
+          when(
+            () => editorPreferencesRepository.getComponentZoom(
+              projectPath: project.path,
+              componentName: component.name,
+            ),
+          ).thenAnswer((_) => completer.future);
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: true);
+          Future<void>.delayed(Duration.zero, () => completer.complete(4));
+        },
+        build: buildBloc,
+        act: (bloc) => bloc
+          ..add(const ComponentEditorStarted())
+          ..add(const ComponentEditorZoomedIn()),
+        wait: const Duration(milliseconds: 10),
+        expect: () => [
+          isA<ComponentEditorState>().having((s) => s.zoom, 'zoom', 1.5),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'keeps the default zoom when the stored one cannot be loaded',
+        setUp: () {
+          when(
+            () => editorPreferencesRepository.getComponentZoom(
+              projectPath: project.path,
+              componentName: component.name,
+            ),
+          ).thenThrow(Exception('oops'));
+          stubComponents(const []);
+          stubUpToDate(isUpToDate: true);
+        },
+        build: buildBloc,
+        act: (bloc) => bloc.add(const ComponentEditorStarted()),
+        verify: (bloc) =>
+            expect(bloc.state.zoom, EditorPreferencesRepository.defaultZoom),
+      );
 
       blocTest<ComponentEditorBloc, ComponentEditorState>(
         'loads the classes of the other components',
