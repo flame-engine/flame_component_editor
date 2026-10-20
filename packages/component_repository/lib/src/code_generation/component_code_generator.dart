@@ -36,7 +36,11 @@ class ComponentCodeGenerator {
   }
 
   /// Returns the formatted Dart source of [component].
-  String generate(Component component) {
+  ///
+  /// Paints that use a color of [palette] reference its generated class
+  /// (see [PaletteCodeGenerator]); the others, including those whose
+  /// palette color no longer exists, use their color value.
+  String generate(Component component, {Palette palette = const Palette()}) {
     final rootClass = dartRootClassName(component.name);
     final buffer = StringBuffer()
       ..writeln(header)
@@ -51,29 +55,33 @@ class ComponentCodeGenerator {
         ..writeln("import 'dart:ui';")
         ..writeln();
     }
-    buffer
-      ..writeln("import 'package:flame/components.dart';")
-      ..writeln();
+    buffer.writeln("import 'package:flame/components.dart';");
+    if (component.usedPaletteColors.any(palette.contains)) {
+      buffer.writeln("import '${PaletteCodeGenerator.fileName}';");
+    }
+    buffer.writeln();
 
     _writeClass(
       buffer,
       component,
+      palette: palette,
       rootName: component.name,
       className: rootClass,
       doc: 'The `${component.name}` component.',
       parameters: '{super.position, super.angle, super.anchor, super.priority}',
-      arguments: _arguments(component, withPosition: false),
+      arguments: _arguments(component, palette, withPosition: false),
     );
     for (final node in component.nodes.skip(1)) {
       if (node.children.isEmpty) continue;
       _writeClass(
         buffer,
         node,
+        palette: palette,
         rootName: component.name,
         className: dartChildClassName(component.name, node.name),
         doc: 'The `${node.name}` child component of [$rootClass].',
         parameters: '',
-        arguments: _arguments(node, withPosition: true),
+        arguments: _arguments(node, palette, withPosition: true),
       );
     }
     return _formatter.format(buffer.toString());
@@ -82,6 +90,7 @@ class ComponentCodeGenerator {
   void _writeClass(
     StringBuffer buffer,
     Component component, {
+    required Palette palette,
     required String rootName,
     required String className,
     required String doc,
@@ -112,7 +121,7 @@ class ComponentCodeGenerator {
           ? _flameClass(child)
           : dartChildClassName(rootName, child.name);
       final value = child.children.isEmpty
-          ? '$type(${_list(_arguments(child, withPosition: true))})'
+          ? '$type(${_list(_arguments(child, palette, withPosition: true))})'
           : '$type()';
       buffer
         ..writeln()
@@ -136,7 +145,8 @@ class ComponentCodeGenerator {
   /// The arguments of the Flame constructor, one per property. The root
   /// position, angle and anchor are left to whoever uses the component.
   static List<String> _arguments(
-    Component component, {
+    Component component,
+    Palette palette, {
     required bool withPosition,
   }) {
     return [
@@ -156,7 +166,8 @@ class ComponentCodeGenerator {
         'size: ${_vector(c.size.width, c.size.height)}',
       if (component case final RadiusComponent c)
         'radius: ${_number(c.radius.radius)}',
-      if (component case final PaintedComponent c) 'paint: ${_paint(c.paint)}',
+      if (component case final PaintedComponent c)
+        'paint: ${_paint(c.paint, palette)}',
     ];
   }
 
@@ -183,11 +194,20 @@ class ComponentCodeGenerator {
         : 'Anchor(${_number(anchor.x)}, ${_number(anchor.y)})';
   }
 
-  static String _paint(ComponentPaint paint) {
-    final color = paint.color.toRadixString(16).toUpperCase().padLeft(8, '0');
+  /// The `Color` constant of a 32 bit ARGB [color].
+  static String colorLiteral(int color) {
+    final hex = color.toRadixString(16).toUpperCase().padLeft(8, '0');
+    return 'Color(0x$hex)';
+  }
+
+  static String _paint(ComponentPaint paint, Palette palette) {
+    final paletteColor = paint.paletteColor;
+    final color = paletteColor != null && palette.contains(paletteColor)
+        ? PaletteCodeGenerator.reference(paletteColor)
+        : 'const ${colorLiteral(paint.color)}';
     return [
       'Paint()',
-      '..color = const Color(0x$color)',
+      '..color = $color',
       if (paint.style == PaintStyle.stroke) '..style = PaintingStyle.stroke',
     ].join();
   }

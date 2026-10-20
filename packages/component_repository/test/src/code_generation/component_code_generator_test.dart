@@ -415,5 +415,41 @@ class $PlayerHead extends PositionComponent {
         contains('const Color(0x00000001)'),
       );
     });
+
+    test('references the palette for palette colors', () {
+      const palette = Palette(
+        colors: [PaletteColor(name: 'dark_grey', color: 0xFF333333)],
+      );
+
+      final code = generator.generate(
+        const RectangleComponent(
+          name: 'Player',
+          paint: ComponentPaint(paletteColor: 'dark_grey'),
+          children: [
+            CircleComponent(
+              name: 'eye',
+              paint: ComponentPaint(color: 0xFF0000FF),
+            ),
+          ],
+        ),
+        palette: palette,
+      );
+
+      expect(code, contains("import 'palette.generated.dart';"));
+      expect(code, contains('paint: Paint()..color = GamePalette.darkGrey'));
+      expect(code, contains('const Color(0xFF0000FF)'));
+    });
+
+    test('uses the color value when the palette color is missing', () {
+      final code = generator.generate(
+        const RectangleComponent(
+          name: 'Player',
+          paint: ComponentPaint(color: 0xFF00FF00, paletteColor: 'missing'),
+        ),
+      );
+
+      expect(code, isNot(contains('palette.generated.dart')));
+      expect(code, contains('const Color(0xFF00FF00)'));
+    });
   });
 }

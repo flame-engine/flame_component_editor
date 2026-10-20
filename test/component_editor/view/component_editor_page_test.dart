@@ -5,6 +5,7 @@ import 'package:component_repository/component_repository.dart';
 import 'package:flame/game.dart';
 import 'package:flame_component_editor/component_editor/component_editor.dart';
 import 'package:flame_component_editor/component_editor/widgets/widgets.dart';
+import 'package:flame_component_editor/palette/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,6 +39,8 @@ void main() {
       final projectRepository = _MockProjectRepository();
       when(() => componentRepository.getComponents(project.path))
           .thenAnswer((_) async => const [component]);
+      when(() => componentRepository.getPalette(project.path))
+          .thenAnswer((_) async => const Palette());
       when(() => projectRepository.getSettings(project))
           .thenAnswer((_) async => const ProjectSettings());
       when(
@@ -82,8 +85,10 @@ void main() {
       );
     });
 
-    Widget buildSubject() =>
-        BlocProvider.value(value: bloc, child: const ComponentEditorView());
+    Widget buildSubject() => BlocProvider.value(
+      value: bloc,
+      child: const ComponentEditorView(project: project),
+    );
 
     testWidgets('shows the preview and the property editors', (tester) async {
       await tester.pumpApp(buildSubject());
@@ -143,6 +148,60 @@ void main() {
       expect(toolbar.left, equals(preview.left));
       expect(toolbar.width, equals(preview.width));
       expect(toolbar.bottom, lessThanOrEqualTo(preview.top));
+    });
+
+    testWidgets('top bar sits above the panels', (tester) async {
+      await tester.pumpApp(buildSubject());
+
+      final topBar = tester.getRect(find.byType(EditorTopBar));
+      final tree = tester.getRect(find.byType(ComponentTreePanel));
+      final properties = tester.getRect(find.byType(PropertiesPanel));
+      expect(topBar.left, equals(tree.left));
+      expect(topBar.right, equals(properties.right));
+      expect(topBar.bottom, lessThanOrEqualTo(tree.top));
+    });
+
+    testWidgets('top bar opens the palette and passes on the saved palette', (
+      tester,
+    ) async {
+      const palette = Palette(
+        colors: [PaletteColor(name: 'color1', color: 0xFFFFFFFF)],
+      );
+      final componentRepository = _MockComponentRepository();
+      final projectRepository = _MockProjectRepository();
+      when(() => componentRepository.getPalette(project.path))
+          .thenAnswer((_) async => const Palette());
+      when(() => componentRepository.getComponents(project.path))
+          .thenAnswer((_) async => const [component]);
+      when(() => componentRepository.savePalette(project.path, palette))
+          .thenAnswer((_) async {});
+      when(() => projectRepository.getSettings(project))
+          .thenAnswer((_) async => const ProjectSettings());
+      when(
+        () => componentRepository.writePaletteCode(
+          project.path,
+          const ProjectSettings().outputPath,
+          palette,
+        ),
+      ).thenAnswer((_) async {});
+      await tester.pumpApp(
+        buildSubject(),
+        componentRepository: componentRepository,
+        projectRepository: projectRepository,
+      );
+
+      await tester.tap(find.byTooltip('Palette'));
+      await tester.pumpRouteTransition();
+      expect(find.byType(PaletteView), findsOneWidget);
+
+      await tester.tap(find.text('Add color'));
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpRouteTransition();
+
+      expect(find.byType(PaletteView), findsNothing);
+      verify(() => bloc.add(const ComponentEditorPaletteChanged(palette)))
+          .called(1);
     });
 
     testWidgets('dispatches highlight toggles', (tester) async {
@@ -666,7 +725,7 @@ void main() {
               MaterialPageRoute<void>(
                 builder: (_) => BlocProvider.value(
                   value: bloc,
-                  child: const ComponentEditorView(),
+                  child: const ComponentEditorView(project: project),
                 ),
               ),
             ),

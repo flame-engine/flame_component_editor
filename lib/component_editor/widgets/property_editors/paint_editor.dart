@@ -6,13 +6,23 @@ import 'package:flutter/material.dart';
 
 /// {@template paint_editor}
 /// Edits a [ComponentPaint]. Used by every [PaintedComponent].
+///
+/// Its color is picked by hand or from the [palette].
 /// {@endtemplate}
 class PaintEditor extends StatelessWidget {
   /// {@macro paint_editor}
-  const new({required this.value, required this.onChanged, super.key});
+  const new({
+    required this.value,
+    required this.onChanged,
+    this.palette = const Palette(),
+    super.key,
+  });
 
   /// The current paint.
   final ComponentPaint value;
+
+  /// The palette of the project.
+  final Palette palette;
 
   /// Called with the edited paint.
   final ValueChanged<ComponentPaint> onChanged;
@@ -25,7 +35,12 @@ class PaintEditor extends StatelessWidget {
         ColorField(
           label: 'Color',
           value: value.color,
-          onChanged: (color) => onChanged(value.copyWith(color: color)),
+          palette: palette,
+          paletteColor: value.paletteColor,
+          onChanged: (color) => onChanged(value.withColor(color)),
+          onPaletteColorSelected: (name) => onChanged(
+            value.withPaletteColor(name, palette.colorOf(name) ?? value.color),
+          ),
         ),
         EnumField<PaintStyle>(
           label: 'Style',

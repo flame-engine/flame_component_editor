@@ -41,17 +41,22 @@ class ComponentEditorBloc
     on<ComponentEditorRadiusChanged>(_onRadiusChanged);
     on<ComponentEditorVerticesChanged>(_onVerticesChanged);
     on<ComponentEditorPaintChanged>(_onPaintChanged);
+    on<ComponentEditorPaletteChanged>(_onPaletteChanged);
     on<ComponentEditorSelectionHighlightToggled>(_onSelectionHighlightToggled);
     on<ComponentEditorSaveRequested>(_onSaveRequested);
   }
 
   final Project _project;
+
   final ComponentRepository _componentRepository;
   final ProjectRepository _projectRepository;
 
   /// How many saves were requested, so slower work started before a save
   /// doesn't overwrite what the save found.
   int _saves = 0;
+
+  /// Whether a [ComponentEditorPaletteChanged] was handled.
+  bool _isPaletteChanged = false;
 
   /// The status after an edit: edits are allowed while saving, but must not
   /// end the save, or another save could run at the same time.
@@ -69,6 +74,16 @@ class ComponentEditorBloc
     final saves = _saves;
     bool isSaving() =>
         _saves != saves || state.status == ComponentEditorStatus.saving;
+
+    try {
+      final palette = await _componentRepository.getPalette(_project.path);
+      // A palette changed meanwhile is newer.
+      if (!_isPaletteChanged && palette != state.palette) {
+        emit(state.copyWith(palette: palette));
+      }
+    } on Exception {
+      // Paints keep the last known value of their palette colors.
+    }
 
     try {
       final taken = await _loadTakenClassNames();
@@ -255,6 +270,14 @@ class ComponentEditorBloc
       }
       return node;
     });
+  }
+
+  void _onPaletteChanged(
+    ComponentEditorPaletteChanged event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    _isPaletteChanged = true;
+    emit(state.copyWith(palette: event.palette));
   }
 
   /// Replaces the selected node with the result of [edit].

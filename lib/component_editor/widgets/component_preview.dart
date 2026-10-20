@@ -1,3 +1,4 @@
+import 'package:component_repository/component_repository.dart';
 import 'package:flame/game.dart';
 import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
 import 'package:flame_component_editor/component_editor/widgets/preview/preview.dart';
@@ -8,6 +9,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// Renders the component being edited with Flame, highlighting the
 /// selected node unless [ComponentEditorState.isSelectionHighlighted] is
 /// off.
+///
+/// Paints that use palette colors are drawn with their current value in
+/// [ComponentEditorState.palette].
 /// {@endtemplate}
 class ComponentPreview extends StatefulWidget {
   /// {@macro component_preview}
@@ -24,10 +28,13 @@ class _ComponentPreviewState extends State<ComponentPreview> {
 
   static ComponentPreviewGame _createGame(ComponentEditorState state) {
     return ComponentPreviewGame(
-      component: state.component,
+      component: _previewed(state),
       highlightedPath: _highlightedPath(state),
     );
   }
+
+  static Component _previewed(ComponentEditorState state) =>
+      state.component.withPaletteColorsResolved(state.palette);
 
   static List<int>? _highlightedPath(ComponentEditorState state) =>
       state.isSelectionHighlighted ? state.selectedPath : null;
@@ -37,12 +44,15 @@ class _ComponentPreviewState extends State<ComponentPreview> {
     return BlocListener<ComponentEditorBloc, ComponentEditorState>(
       listenWhen: (previous, current) =>
           previous.component != current.component ||
+          previous.palette != current.palette ||
           previous.selectedPath != current.selectedPath ||
           previous.isSelectionHighlighted != current.isSelectionHighlighted,
       // A single call, so a removed node and the new selection are shown
       // together.
-      listener: (context, state) =>
-          _game.show(state.component, highlightedPath: _highlightedPath(state)),
+      listener: (context, state) => _game.show(
+        _previewed(state),
+        highlightedPath: _highlightedPath(state),
+      ),
       // The preview takes no keyboard input; without this the game widget
       // would grab focus and swallow the editor shortcuts (e.g. Cmd+S).
       child: GameWidget(game: _game, autofocus: false),

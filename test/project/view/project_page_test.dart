@@ -79,6 +79,8 @@ void main() {
       projectRepository = _MockProjectRepository();
       when(() => componentRepository.getComponents(project.path))
           .thenAnswer((_) async => [player]);
+      when(() => componentRepository.getPalette(project.path))
+          .thenAnswer((_) async => const Palette());
       when(() => projectRepository.getSettings(project))
           .thenAnswer((_) async => const ProjectSettings());
       when(
