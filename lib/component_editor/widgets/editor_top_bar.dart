@@ -2,6 +2,7 @@ import 'package:flame_component_editor/component_editor/bloc/component_editor_bl
 import 'package:flame_component_editor/palette/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_repository/project_repository.dart';
 
 /// {@template editor_top_bar}
 /// The bar below the app bar, above the editor panels, with the actions
@@ -9,7 +10,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// {@endtemplate}
 class EditorTopBar extends StatelessWidget {
   /// {@macro editor_top_bar}
-  const new({super.key});
+  const new({required this.project, super.key});
+
+  /// The project the edited component belongs to.
+  final Project project;
 
   /// Height of the bar.
   static const height = 40.0;
@@ -18,7 +22,7 @@ class EditorTopBar extends StatelessWidget {
     final bloc = context.read<ComponentEditorBloc>();
     final palette = await PaletteDialog.show(
       context,
-      project: bloc.project,
+      project: project,
       component: bloc.state.component,
     );
     // The editor may have been closed meanwhile.

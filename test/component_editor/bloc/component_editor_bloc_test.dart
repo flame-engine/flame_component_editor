@@ -416,10 +416,6 @@ void main() {
       verify: (bloc) => expect(bloc.state.hasChanges, isFalse),
     );
 
-    test('exposes the project', () {
-      expect(buildBloc().project, equals(project));
-    });
-
     group('component tree', () {
       const child = RectangleComponent(name: 'rectangle1');
       const tree = RectangleComponent(name: 'Player', children: [child]);

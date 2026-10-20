@@ -48,9 +48,6 @@ class ComponentEditorBloc
 
   final Project _project;
 
-  /// The project the component belongs to.
-  Project get project => _project;
-
   final ComponentRepository _componentRepository;
   final ProjectRepository _projectRepository;
 

@@ -6,6 +6,7 @@ import 'package:flame_component_editor/component_editor/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_repository/project_repository.dart';
 
 /// {@template component_editor_view}
 /// Shows the tree of the component being edited on the left, its preview
@@ -17,7 +18,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// {@endtemplate}
 class ComponentEditorView extends StatelessWidget {
   /// {@macro component_editor_view}
-  const new({super.key});
+  const new({required this.project, super.key});
+
+  /// The project the component belongs to.
+  final Project project;
 
   /// Width of the component tree panel.
   static const treePanelWidth = 240.0;
@@ -63,12 +67,12 @@ class ComponentEditorView extends StatelessWidget {
                 title: const _Title(),
                 actions: [_SaveButton(onPressed: save)],
               ),
-              body: const Column(
+              body: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  EditorTopBar(),
-                  Divider(height: 1),
-                  Expanded(
+                  EditorTopBar(project: project),
+                  const Divider(height: 1),
+                  const Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

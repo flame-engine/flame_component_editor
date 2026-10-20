@@ -85,8 +85,10 @@ void main() {
       );
     });
 
-    Widget buildSubject() =>
-        BlocProvider.value(value: bloc, child: const ComponentEditorView());
+    Widget buildSubject() => BlocProvider.value(
+      value: bloc,
+      child: const ComponentEditorView(project: project),
+    );
 
     testWidgets('shows the preview and the property editors', (tester) async {
       await tester.pumpApp(buildSubject());
@@ -167,7 +169,6 @@ void main() {
       );
       final componentRepository = _MockComponentRepository();
       final projectRepository = _MockProjectRepository();
-      when(() => bloc.project).thenReturn(project);
       when(() => componentRepository.getPalette(project.path))
           .thenAnswer((_) async => const Palette());
       when(() => componentRepository.getComponents(project.path))
@@ -724,7 +725,7 @@ void main() {
               MaterialPageRoute<void>(
                 builder: (_) => BlocProvider.value(
                   value: bloc,
-                  child: const ComponentEditorView(),
+                  child: const ComponentEditorView(project: project),
                 ),
               ),
             ),
