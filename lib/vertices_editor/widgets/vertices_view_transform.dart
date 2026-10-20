@@ -2,11 +2,13 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:component_repository/component_repository.dart';
+import 'package:flutter/foundation.dart';
 
 /// {@template vertices_view_transform}
 /// Maps the local coordinates of a polygon to the vertices canvas and
 /// back, and finds the handles under a point of the canvas.
 /// {@endtemplate}
+@immutable
 class VerticesViewTransform {
   /// {@macro vertices_view_transform}
   const new({this.scale = 1, this.offset = Offset.zero});
@@ -33,6 +35,24 @@ class VerticesViewTransform {
       offset: size.center(Offset.zero) - bounds.center * scale,
     );
   }
+
+  /// This transform scaled by [zoom] around [center], a point of the
+  /// canvas that stays where it is.
+  VerticesViewTransform zoomed(double zoom, Offset center) {
+    return VerticesViewTransform(
+      scale: scale * zoom,
+      offset: center - (center - offset) * zoom,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is VerticesViewTransform &&
+      other.scale == scale &&
+      other.offset == offset;
+
+  @override
+  int get hashCode => Object.hash(scale, offset);
 
   /// The radius around a handle within which the pointer hits it.
   static const hitRadius = 10.0;

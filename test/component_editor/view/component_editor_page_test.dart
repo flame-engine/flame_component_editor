@@ -238,6 +238,97 @@ void main() {
       await states.close();
     });
 
+    group('zoom', () {
+      testWidgets('dispatches zooms from the toolbar', (tester) async {
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('Zoom in'));
+        await tester.tap(find.byTooltip('Zoom out'));
+        await tester.tap(find.text('100%'));
+
+        verify(() => bloc.add(const ComponentEditorZoomedIn())).called(1);
+        verify(() => bloc.add(const ComponentEditorZoomedOut())).called(1);
+        verify(() => bloc.add(const ComponentEditorZoomReset())).called(1);
+      });
+
+      testWidgets('shows the zoom and disables zooming past the limits', (
+        tester,
+      ) async {
+        when(() => bloc.state).thenReturn(
+          const ComponentEditorState(
+            component: component,
+            savedComponent: component,
+            zoom: 8,
+          ),
+        );
+        await tester.pumpApp(buildSubject());
+
+        expect(find.text('800%'), findsOneWidget);
+        IconButton button(String tooltip) => tester.widget<IconButton>(
+          find.ancestor(
+            of: find.byTooltip(tooltip),
+            matching: find.byType(IconButton),
+          ),
+        );
+        expect(button('Zoom in').onPressed, isNull);
+        expect(button('Zoom out').onPressed, isNotNull);
+      });
+
+      for (final (control, key, event) in [
+        (
+          LogicalKeyboardKey.metaLeft,
+          LogicalKeyboardKey.equal,
+          const ComponentEditorZoomedIn(),
+        ),
+        (
+          LogicalKeyboardKey.controlLeft,
+          LogicalKeyboardKey.minus,
+          const ComponentEditorZoomedOut(),
+        ),
+        (
+          LogicalKeyboardKey.metaLeft,
+          LogicalKeyboardKey.digit0,
+          const ComponentEditorZoomReset(),
+        ),
+      ]) {
+        testWidgets('dispatches $event with ${control.keyLabel}+'
+            '${key.keyLabel}', (tester) async {
+          await tester.pumpApp(buildSubject());
+          await tester.pump();
+
+          await tester.sendKeyDownEvent(control);
+          await tester.sendKeyEvent(key);
+          await tester.sendKeyUpEvent(control);
+
+          verify(() => bloc.add(event)).called(1);
+        });
+      }
+
+      testWidgets('zooms the preview', (tester) async {
+        const state = ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          zoom: 2,
+        );
+        final states = StreamController<ComponentEditorState>();
+        whenListen(bloc, states.stream, initialState: state);
+        await tester.pumpApp(buildSubject());
+        await tester.pump();
+        final game = tester
+            .widget<GameWidget<ComponentPreviewGame>>(
+              find.byType(GameWidget<ComponentPreviewGame>),
+            )
+            .game!;
+        expect(game.camera.viewfinder.zoom, 2);
+
+        states.add(state.copyWith(zoom: 0.5));
+        await tester.pump();
+
+        expect(game.camera.viewfinder.zoom, 0.5);
+        await states.close();
+      });
+    });
+
     testWidgets('dispatches size changes', (tester) async {
       await tester.pumpApp(buildSubject());
 

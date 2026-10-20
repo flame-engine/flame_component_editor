@@ -16,16 +16,28 @@ class SelectionHighlight extends flame.Component {
   /// The color of the border.
   static const color = Color(0xFFFF00FF);
 
-  /// The width of the border.
+  /// The width of the border on screen, whatever the [zoom].
   static const strokeWidth = 4.0;
 
-  static final _paint = Paint()
+  final _paint = Paint()
     ..color = color
     ..style = PaintingStyle.stroke
     ..strokeWidth = strokeWidth;
 
   /// The component to highlight, if any.
   flame.PositionComponent? target;
+
+  /// The zoom of the camera, which scales the border too: it is drawn
+  /// thinner when zoomed in, so it keeps the same width on screen.
+  double get zoom => _zoom;
+  double _zoom = 1;
+  set zoom(double value) {
+    _zoom = value;
+    _paint.strokeWidth = worldStrokeWidth;
+  }
+
+  /// The width of the border in world coordinates.
+  double get worldStrokeWidth => strokeWidth / _zoom;
 
   @override
   void render(Canvas canvas) {
@@ -41,7 +53,7 @@ class SelectionHighlight extends flame.Component {
       ..rotate(target.absoluteAngle)
       // Drawn outside of the component, so it doesn't hide its own edges.
       ..drawRect(
-        Rect.fromLTWH(0, 0, size.x, size.y).inflate(strokeWidth / 2),
+        Rect.fromLTWH(0, 0, size.x, size.y).inflate(worldStrokeWidth / 2),
         _paint,
       )
       ..restore();

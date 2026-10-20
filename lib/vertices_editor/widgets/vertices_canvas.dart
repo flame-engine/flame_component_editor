@@ -29,8 +29,9 @@ class VerticesCanvas extends StatefulWidget {
 class _VerticesCanvasState extends State<VerticesCanvas> {
   final _focusNode = FocusNode(debugLabel: 'VerticesCanvas');
 
-  // Computed once, so the polygon doesn't move while it is edited.
-  VerticesViewTransform? _transform;
+  // Computed once, so the polygon doesn't move while it is edited. The
+  // zoom is applied on top of it.
+  VerticesViewTransform? _fitted;
   int? _hoveredEdge;
   int? _draggedIndex;
   MouseCursor _cursor = MouseCursor.defer;
@@ -147,10 +148,11 @@ class _VerticesCanvasState extends State<VerticesCanvas> {
           color: VerticesCanvas.backgroundColor,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final transform = _transform ??= VerticesViewTransform.fit(
+              final size = constraints.biggest;
+              final transform = (_fitted ??= VerticesViewTransform.fit(
                 state.initial.vertices,
-                constraints.biggest,
-              );
+                size,
+              )).zoomed(state.zoom, size.center(Offset.zero));
               return MouseRegion(
                 cursor: _cursor,
                 onHover: (event) => _onHover(event, transform),

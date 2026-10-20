@@ -46,6 +46,7 @@ final class ComponentEditorState extends Equatable {
     this.isCodeOutdated = false,
     this.isSelectionHighlighted = true,
     this.palette = const Palette(),
+    this.zoom = EditorPreferencesRepository.defaultZoom,
   });
 
   /// The current status.
@@ -83,6 +84,20 @@ final class ComponentEditorState extends Equatable {
   /// The palette of the project, whose colors paints can use (see
   /// [ComponentPaint.paletteColor]).
   final Palette palette;
+
+  /// The zoom of the preview, `1` being the actual size.
+  ///
+  /// It is an editor preference, remembered for each component, not part
+  /// of the [component].
+  final double zoom;
+
+  /// The zoom after zooming in (see [ZoomLevels.next]), or `null` if
+  /// [zoom] is the largest one.
+  double? get nextZoom => ZoomLevels.next(zoom);
+
+  /// The zoom after zooming out (see [ZoomLevels.previous]), or `null` if
+  /// [zoom] is the smallest one.
+  double? get previousZoom => ZoomLevels.previous(zoom);
 
   /// Whether the component can be saved: it has changes or its code is
   /// outdated, and it is not being saved already.
@@ -126,6 +141,7 @@ final class ComponentEditorState extends Equatable {
     bool? isCodeOutdated,
     bool? isSelectionHighlighted,
     Palette? palette,
+    double? zoom,
   }) {
     return ComponentEditorState(
       status: status ?? this.status,
@@ -137,6 +153,7 @@ final class ComponentEditorState extends Equatable {
       isSelectionHighlighted:
           isSelectionHighlighted ?? this.isSelectionHighlighted,
       palette: palette ?? this.palette,
+      zoom: zoom ?? this.zoom,
     );
   }
 
@@ -150,5 +167,6 @@ final class ComponentEditorState extends Equatable {
     isCodeOutdated,
     isSelectionHighlighted,
     palette,
+    zoom,
   ];
 }

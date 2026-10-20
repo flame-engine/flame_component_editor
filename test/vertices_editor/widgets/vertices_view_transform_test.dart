@@ -44,6 +44,18 @@ void main() {
       );
     });
 
+    test('zoomed scales around the center, which stays in place', () {
+      const transform = VerticesViewTransform(scale: 2, offset: Offset(10, 20));
+      const center = Offset(100, 100);
+      final zoomed = transform.zoomed(3, center);
+
+      expect(zoomed.scale, equals(6));
+      // The local point under the center doesn't move.
+      final local = (center - transform.offset) / transform.scale;
+      expect(zoomed.toCanvas(ComponentVertex(local.dx, local.dy)), center);
+      expect(transform.zoomed(1, center), equals(transform));
+    });
+
     group('hit testing', () {
       const transform = VerticesViewTransform();
 

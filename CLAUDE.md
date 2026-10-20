@@ -64,19 +64,23 @@ three pass.
   (a top bar below the app bar for project-wide actions — the palette
   button —, component tree on the left to add/remove/select/rename nested children,
   live Flame preview in the center, with a toolbar above it whose toggle
-  highlights the selected node with a magenta border, properties of the selected node on the
+  highlights the selected node with a magenta border and whose zoom
+  controls (also Cmd/Ctrl + `=`/`-`/`0`) zoom the preview — the zoom is an
+  app-wide preference per component, in `editor_preferences_repository`,
+  never in the component's JSON —, properties of the selected node on the
   right, explicit save with button or Cmd/Ctrl+S, unsaved-changes prompt when
   leaving). **Saving also generates the component's Dart code** in the
   settings' output path, with a getter for every child — see "Code
   generation" in [docs/architecture.md](docs/architecture.md). Packages: `key_value_storage_client`,
-  `file_system_client`, `project_repository`, `component_repository`
+  `file_system_client`, `project_repository`, `editor_preferences_repository`, `component_repository`
   (components stored in `<project>/.flame_editor/components/<name>.json`) —
   see "Existing modules" in [docs/architecture.md](docs/architecture.md).
 - Component types: `polygon` (a Flame `PolygonComponent`: position, anchor
   and angle — children only —, vertices and paint; no size, which is the
   vertices' bounding box; it starts as a triangle or a square, and its
   vertices are edited in the vertices editor dialog, `lib/vertices_editor/`,
-  by dragging, adding from edge midpoints and deleting — see "Polygons" in
+  by dragging, adding from edge midpoints and deleting, with its own zoom
+  (not remembered) — see "Polygons" in
   [docs/architecture.md](docs/architecture.md)), `rectangle` (position, anchor and angle — edited only on
   children —, size, and paint with color and fill style), `position` (a plain Flame
   `PositionComponent`: position, anchor and angle — children only — and size; draws nothing

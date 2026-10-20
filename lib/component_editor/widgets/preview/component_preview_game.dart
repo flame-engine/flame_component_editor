@@ -7,17 +7,18 @@ import 'package:flutter/painting.dart';
 
 /// {@template component_preview_game}
 /// A Flame game that renders a [Component] and its children, centered on
-/// screen, and highlights one of them.
+/// screen and scaled by [zoom], and highlights one of them.
 ///
 /// The game only renders: the component being edited is owned by the
 /// `ComponentEditorBloc` and pushed here with [show].
 /// {@endtemplate}
 class ComponentPreviewGame extends FlameGame {
   /// {@macro component_preview_game}
-  new({required this._component, this._highlightedPath});
+  new({required this._component, this._highlightedPath, this._zoom = 1});
 
   Component _component;
   List<int>? _highlightedPath;
+  double _zoom;
   late flame.PositionComponent _preview;
 
   /// The Flame component currently rendering the previewed root
@@ -27,12 +28,21 @@ class ComponentPreviewGame extends FlameGame {
   /// Draws the border around the highlighted node.
   final highlight = SelectionHighlight();
 
+  /// How much the preview is scaled, `1` being the actual size. It zooms
+  /// around the center of the screen, where the root is.
+  double get zoom => _zoom;
+  set zoom(double value) {
+    _zoom = value;
+    if (isLoaded) _applyZoom();
+  }
+
   @override
   Color backgroundColor() => const Color(0xFF1E1E1E);
 
   @override
   void onLoad() {
     world.add(highlight);
+    _applyZoom();
     _rebuild();
   }
 
@@ -56,6 +66,11 @@ class ComponentPreviewGame extends FlameGame {
     } else {
       _rebuild();
     }
+  }
+
+  void _applyZoom() {
+    camera.viewfinder.zoom = _zoom;
+    highlight.zoom = _zoom;
   }
 
   void _rebuild() {

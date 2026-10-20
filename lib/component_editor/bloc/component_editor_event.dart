@@ -176,6 +176,26 @@ final class ComponentEditorSelectionHighlightToggled
   const new();
 }
 
+/// The user zoomed in the preview, to the next of
+/// [ZoomLevels].
+final class ComponentEditorZoomedIn extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorZoomedIn] event.
+  const new();
+}
+
+/// The user zoomed out the preview, to the previous of
+/// [ZoomLevels].
+final class ComponentEditorZoomedOut extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorZoomedOut] event.
+  const new();
+}
+
+/// The user reset the zoom of the preview to 100%.
+final class ComponentEditorZoomReset extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorZoomReset] event.
+  const new();
+}
+
 /// The user asked to save the component.
 final class ComponentEditorSaveRequested extends ComponentEditorEvent {
   /// Creates a [ComponentEditorSaveRequested] event.

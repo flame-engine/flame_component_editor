@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:component_repository/component_repository.dart';
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:project_repository/project_repository.dart';
 
@@ -26,6 +27,7 @@ class ComponentEditorBloc
     required Component component,
     required this._componentRepository,
     required this._projectRepository,
+    required this._editorPreferencesRepository,
   }) : super(
          ComponentEditorState(component: component, savedComponent: component),
        ) {
@@ -43,6 +45,9 @@ class ComponentEditorBloc
     on<ComponentEditorPaintChanged>(_onPaintChanged);
     on<ComponentEditorPaletteChanged>(_onPaletteChanged);
     on<ComponentEditorSelectionHighlightToggled>(_onSelectionHighlightToggled);
+    on<ComponentEditorZoomedIn>(_onZoomedIn);
+    on<ComponentEditorZoomedOut>(_onZoomedOut);
+    on<ComponentEditorZoomReset>(_onZoomReset);
     on<ComponentEditorSaveRequested>(_onSaveRequested);
   }
 
@@ -50,6 +55,7 @@ class ComponentEditorBloc
 
   final ComponentRepository _componentRepository;
   final ProjectRepository _projectRepository;
+  final EditorPreferencesRepository _editorPreferencesRepository;
 
   /// How many saves were requested, so slower work started before a save
   /// doesn't overwrite what the save found.
@@ -57,6 +63,10 @@ class ComponentEditorBloc
 
   /// Whether a [ComponentEditorPaletteChanged] was handled.
   bool _isPaletteChanged = false;
+
+  /// Whether the user zoomed, so the stored zoom loaded on start doesn't
+  /// replace the newer one.
+  bool _isZoomChanged = false;
 
   /// The status after an edit: edits are allowed while saving, but must not
   /// end the save, or another save could run at the same time.
@@ -74,6 +84,18 @@ class ComponentEditorBloc
     final saves = _saves;
     bool isSaving() =>
         _saves != saves || state.status == ComponentEditorStatus.saving;
+
+    try {
+      final zoom = await _editorPreferencesRepository.getComponentZoom(
+        projectPath: _project.path,
+        componentName: state.component.name,
+      );
+      if (!_isZoomChanged && zoom != state.zoom) {
+        emit(state.copyWith(zoom: zoom));
+      }
+    } on Exception {
+      // The preview keeps the default zoom.
+    }
 
     try {
       final palette = await _componentRepository.getPalette(_project.path);
@@ -295,6 +317,42 @@ class ComponentEditorBloc
     Emitter<ComponentEditorState> emit,
   ) {
     emit(state.copyWith(isSelectionHighlighted: !state.isSelectionHighlighted));
+  }
+
+  Future<void> _onZoomedIn(
+    ComponentEditorZoomedIn event,
+    Emitter<ComponentEditorState> emit,
+  ) async {
+    final zoom = state.nextZoom;
+    if (zoom != null) await _zoom(emit, zoom);
+  }
+
+  Future<void> _onZoomedOut(
+    ComponentEditorZoomedOut event,
+    Emitter<ComponentEditorState> emit,
+  ) async {
+    final zoom = state.previousZoom;
+    if (zoom != null) await _zoom(emit, zoom);
+  }
+
+  Future<void> _onZoomReset(
+    ComponentEditorZoomReset event,
+    Emitter<ComponentEditorState> emit,
+  ) => _zoom(emit, EditorPreferencesRepository.defaultZoom);
+
+  /// Shows the preview at [zoom] and remembers it for this component.
+  Future<void> _zoom(Emitter<ComponentEditorState> emit, double zoom) async {
+    _isZoomChanged = true;
+    emit(state.copyWith(zoom: zoom));
+    try {
+      await _editorPreferencesRepository.setComponentZoom(
+        projectPath: _project.path,
+        componentName: state.component.name,
+        zoom: zoom,
+      );
+    } on Exception {
+      // The zoom is only a convenience: it is just not remembered.
+    }
   }
 
   Future<void> _onSaveRequested(

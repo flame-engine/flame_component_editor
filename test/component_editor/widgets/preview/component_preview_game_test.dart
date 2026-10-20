@@ -11,6 +11,7 @@ class _MockCanvas extends Mock implements Canvas;
 void main() {
   setUpAll(() {
     registerFallbackValue(Offset.zero);
+    registerFallbackValue(Rect.zero);
     registerFallbackValue(Paint());
   });
 
@@ -332,6 +333,40 @@ void main() {
       );
     });
 
+    group('zoom', () {
+      testWithGame(
+        'zooms the camera when loaded',
+        () => ComponentPreviewGame(component: component, zoom: 2),
+        (game) async {
+          await game.ready();
+
+          expect(game.zoom, 2);
+          expect(game.camera.viewfinder.zoom, 2);
+          expect(game.highlight.zoom, 2);
+        },
+      );
+
+      testWithGame(
+        'zooms the camera when changed',
+        () => ComponentPreviewGame(component: component),
+        (game) async {
+          await game.ready();
+
+          game.zoom = 4;
+
+          expect(game.camera.viewfinder.zoom, 4);
+          expect(game.highlight.zoom, 4);
+        },
+      );
+
+      test('keeps the zoom for later when changed before loading', () {
+        final game = ComponentPreviewGame(component: component)..zoom = 3;
+
+        expect(game.zoom, 3);
+        expect(game.isLoaded, isFalse);
+      });
+    });
+
     test('haveSameShape compares the types and the tree', () {
       const child = RectangleComponent(name: 'rectangle1');
 
@@ -393,6 +428,38 @@ void main() {
 
       expect(game.isLoaded, isFalse);
     });
+  });
+
+  group(SelectionHighlight, () {
+    test('keeps the same border width on screen at any zoom', () {
+      final highlight = SelectionHighlight();
+      expect(highlight.worldStrokeWidth, SelectionHighlight.strokeWidth);
+
+      highlight.zoom = 2;
+
+      expect(highlight.worldStrokeWidth, SelectionHighlight.strokeWidth / 2);
+    });
+
+    testWithGame(
+      'draws the border with the zoomed width',
+      () => ComponentPreviewGame(
+        component: component,
+        highlightedPath: [],
+        zoom: 2,
+      ),
+      (game) async {
+        await game.ready();
+        final canvas = _MockCanvas();
+
+        game.highlight.render(canvas);
+
+        final captured = verify(
+          () => canvas.drawRect(captureAny(), captureAny()),
+        ).captured;
+        expect(captured[0], const Rect.fromLTWH(0, 0, 10, 20).inflate(1));
+        expect((captured[1] as Paint).strokeWidth, 2);
+      },
+    );
   });
 
   group(PreviewPositionComponent, () {

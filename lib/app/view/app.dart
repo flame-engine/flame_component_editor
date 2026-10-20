@@ -1,4 +1,5 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:flame_component_editor/home/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +13,7 @@ class App extends StatelessWidget {
   const new({
     required this.projectRepository,
     required this.componentRepository,
+    required this.editorPreferencesRepository,
     super.key,
   });
 
@@ -21,12 +23,16 @@ class App extends StatelessWidget {
   /// The repository used to manage the components of a project.
   final ComponentRepository componentRepository;
 
+  /// The repository used to keep the editor preferences.
+  final EditorPreferencesRepository editorPreferencesRepository;
+
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: projectRepository),
         RepositoryProvider.value(value: componentRepository),
+        RepositoryProvider.value(value: editorPreferencesRepository),
       ],
       child: MaterialApp(
         title: 'Flame Component Editor',

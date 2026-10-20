@@ -1,9 +1,12 @@
+import 'package:editor_preferences_repository/editor_preferences_repository.dart';
 import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
+import 'package:flame_component_editor/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// {@template editor_toolbar}
-/// The bar above the preview, with the preview options.
+/// The bar above the preview, with the preview options: the selection
+/// highlight and the zoom.
 /// {@endtemplate}
 class EditorToolbar extends StatelessWidget {
   /// {@macro editor_toolbar}
@@ -48,9 +51,34 @@ class EditorToolbar extends StatelessWidget {
                 const ComponentEditorSelectionHighlightToggled(),
               ),
             ),
+            const Spacer(),
+            const _EditorZoomControls(),
+            const SizedBox(width: 8),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditorZoomControls extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final zoom = context.select<ComponentEditorBloc, double>(
+      (bloc) => bloc.state.zoom,
+    );
+    final bloc = context.read<ComponentEditorBloc>();
+    return ZoomControls(
+      zoom: zoom,
+      onZoomOut: ZoomLevels.previous(zoom) == null
+          ? null
+          : () => bloc.add(const ComponentEditorZoomedOut()),
+      onZoomIn: ZoomLevels.next(zoom) == null
+          ? null
+          : () => bloc.add(const ComponentEditorZoomedIn()),
+      onReset: () => bloc.add(const ComponentEditorZoomReset()),
     );
   }
 }
