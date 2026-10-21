@@ -55,6 +55,9 @@ class ComponentCodeGenerator {
         ..writeln("import 'dart:ui';")
         ..writeln();
     }
+    if (component.nodes.any((node) => node is HitboxComponent)) {
+      buffer.writeln("import 'package:flame/collisions.dart';");
+    }
     buffer.writeln("import 'package:flame/components.dart';");
     if (component.usedPaletteColors.any(palette.contains)) {
       buffer.writeln("import '${PaletteCodeGenerator.fileName}';");
@@ -139,6 +142,9 @@ class ComponentCodeGenerator {
       PositionComponent() => 'PositionComponent',
       CircleComponent() => 'CircleComponent',
       PolygonComponent() => 'PolygonComponent',
+      RectangleHitboxComponent() => 'RectangleHitbox',
+      CircleHitboxComponent() => 'CircleHitbox',
+      PolygonHitboxComponent() => 'PolygonHitbox',
     };
   }
 
@@ -168,6 +174,14 @@ class ComponentCodeGenerator {
         'radius: ${_number(c.radius.radius)}',
       if (component case final PaintedComponent c)
         'paint: ${_paint(c.paint, palette)}',
+      // Flame defaults to active, non solid hitboxes.
+      if (component case final HitboxComponent c
+          when c.collision.type != HitboxCollisionType.active)
+        'collisionType: CollisionType.${c.collision.type.name}',
+      if (component case HitboxComponent(
+        collision: ComponentCollision(isSolid: true),
+      ))
+        'isSolid: true',
     ];
   }
 

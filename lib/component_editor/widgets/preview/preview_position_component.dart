@@ -1,6 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:flame/components.dart' as flame;
+import 'package:flame_component_editor/component_editor/widgets/preview/dashed_outline.dart';
 import 'package:flutter/painting.dart';
 
 /// {@template preview_position_component}
@@ -18,9 +17,6 @@ class PreviewPositionComponent extends flame.PositionComponent {
   /// The color of the outline.
   static const color = Color(0x66FFFFFF);
 
-  /// The length of each dash, and of the gap after it.
-  static const dashLength = 4.0;
-
   static final _paint = Paint()
     ..color = color
     ..style = PaintingStyle.stroke
@@ -29,24 +25,11 @@ class PreviewPositionComponent extends flame.PositionComponent {
   @override
   void render(Canvas canvas) {
     final rect = size.toRect();
-    final corners = [
+    drawDashedPolygon(canvas, [
       rect.topLeft,
       rect.topRight,
       rect.bottomRight,
       rect.bottomLeft,
-    ];
-    for (var i = 0; i < corners.length; i++) {
-      _drawDashedLine(canvas, corners[i], corners[(i + 1) % corners.length]);
-    }
-  }
-
-  static void _drawDashedLine(Canvas canvas, Offset from, Offset to) {
-    final length = (to - from).distance;
-    if (length == 0) return;
-    final direction = (to - from) / length;
-    for (var start = 0.0; start < length; start += dashLength * 2) {
-      final end = math.min(start + dashLength, length);
-      canvas.drawLine(from + direction * start, from + direction * end, _paint);
-    }
+    ], _paint);
   }
 }

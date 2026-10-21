@@ -43,8 +43,10 @@ class ComponentEditorBloc
     on<ComponentEditorRadiusChanged>(_onRadiusChanged);
     on<ComponentEditorVerticesChanged>(_onVerticesChanged);
     on<ComponentEditorPaintChanged>(_onPaintChanged);
+    on<ComponentEditorCollisionChanged>(_onCollisionChanged);
     on<ComponentEditorPaletteChanged>(_onPaletteChanged);
     on<ComponentEditorSelectionHighlightToggled>(_onSelectionHighlightToggled);
+    on<ComponentEditorHitboxesVisibilityToggled>(_onHitboxesVisibilityToggled);
     on<ComponentEditorZoomedIn>(_onZoomedIn);
     on<ComponentEditorZoomedOut>(_onZoomedOut);
     on<ComponentEditorZoomReset>(_onZoomReset);
@@ -158,6 +160,8 @@ class ComponentEditorBloc
     ComponentEditorChildAdded event,
     Emitter<ComponentEditorState> emit,
   ) {
+    // Hitboxes can't have children.
+    if (state.selectedNode is HitboxComponent) return;
     final component = state.component;
     final parentPath = state.selectedPath;
     final child = Component.create(
@@ -294,6 +298,18 @@ class ComponentEditorBloc
     });
   }
 
+  void _onCollisionChanged(
+    ComponentEditorCollisionChanged event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    _editSelected(emit, (node) {
+      if (node case final HitboxComponent node) {
+        return node.copyWithCollision(event.collision);
+      }
+      return node;
+    });
+  }
+
   void _onPaletteChanged(
     ComponentEditorPaletteChanged event,
     Emitter<ComponentEditorState> emit,
@@ -317,6 +333,13 @@ class ComponentEditorBloc
     Emitter<ComponentEditorState> emit,
   ) {
     emit(state.copyWith(isSelectionHighlighted: !state.isSelectionHighlighted));
+  }
+
+  void _onHitboxesVisibilityToggled(
+    ComponentEditorHitboxesVisibilityToggled event,
+    Emitter<ComponentEditorState> emit,
+  ) {
+    emit(state.copyWith(areHitboxesVisible: !state.areHitboxesVisible));
   }
 
   Future<void> _onZoomedIn(

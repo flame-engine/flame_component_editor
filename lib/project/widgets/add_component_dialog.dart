@@ -79,11 +79,13 @@ class _AddComponentDialogState extends State<AddComponentDialog> {
                 if (type != null) setState(() => _type = type);
               },
               dropdownMenuEntries: [
+                // Hitboxes can only be children.
                 for (final type in ComponentType.values)
-                  DropdownMenuEntry(value: type, label: type.label),
+                  if (!type.isHitbox)
+                    DropdownMenuEntry(value: type, label: type.label),
               ],
             ),
-            if (_type == ComponentType.polygon)
+            if (_type.hasVertices)
               DropdownMenu<PolygonShape>(
                 label: const Text('Shape'),
                 expandedInsets: EdgeInsets.zero,

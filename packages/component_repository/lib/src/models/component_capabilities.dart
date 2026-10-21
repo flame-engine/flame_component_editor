@@ -83,3 +83,15 @@ abstract interface class VerticesComponent {
   /// Returns a copy of this component with [vertices] replaced.
   Component copyWithVertices(ComponentVertices vertices);
 }
+
+/// A [Component] that is a Flame hitbox, with a [ComponentCollision].
+///
+/// Hitboxes are only children, and have no children of their own: Flame
+/// requires a hitbox to be inside a `PositionComponent`.
+abstract interface class HitboxComponent {
+  /// How the hitbox collides with others.
+  ComponentCollision get collision;
+
+  /// Returns a copy of this component with [collision] replaced.
+  Component copyWithCollision(ComponentCollision collision);
+}

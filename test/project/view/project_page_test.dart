@@ -275,6 +275,22 @@ void main() {
         expect(find.text('Rectangle'), findsWidgets);
       });
 
+      testWidgets('does not offer hitboxes, which are only children', (
+        tester,
+      ) async {
+        await tester.pumpApp(buildSubject());
+        await tester.tap(find.text('Add component'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(DropdownMenu<ComponentType>));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Polygon'), findsWidgets);
+        expect(find.text('Rectangle hitbox'), findsNothing);
+        expect(find.text('Circle hitbox'), findsNothing);
+        expect(find.text('Polygon hitbox'), findsNothing);
+      });
+
       testWidgets('asks for the shape of polygons', (tester) async {
         await tester.pumpApp(buildSubject());
         await tester.tap(find.text('Add component'));

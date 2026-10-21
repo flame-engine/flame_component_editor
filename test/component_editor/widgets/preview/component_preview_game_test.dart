@@ -1,4 +1,5 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:flame/collisions.dart' as flame;
 import 'package:flame/components.dart' as flame;
 import 'package:flame_component_editor/component_editor/widgets/widgets.dart';
 import 'package:flame_test/flame_test.dart';
@@ -122,6 +123,104 @@ void main() {
         expect(game.highlight.target, same(child));
       },
     );
+
+    group('hitboxes', () {
+      const hitboxes = PositionComponent(
+        name: 'Player',
+        children: [
+          RectangleHitboxComponent(
+            name: 'rectangleHitbox1',
+            position: ComponentPosition(x: 1, y: 2),
+            size: ComponentSize(width: 10, height: 20),
+            collision: ComponentCollision(
+              type: HitboxCollisionType.passive,
+              isSolid: true,
+            ),
+          ),
+          CircleHitboxComponent(
+            name: 'circleHitbox1',
+            radius: ComponentRadius(radius: 5),
+          ),
+          PolygonHitboxComponent(
+            name: 'polygonHitbox1',
+            vertices: ComponentVertices(ComponentVertices.square),
+          ),
+        ],
+      );
+
+      testWithGame(
+        'renders hitboxes as Flame hitboxes with a preview-only outline',
+        () => ComponentPreviewGame(component: hitboxes),
+        (game) async {
+          await game.ready();
+
+          final [rectangle, circle, polygon] = game.preview.children.toList();
+          expect(rectangle, isA<PreviewRectangleHitbox>());
+          rectangle as PreviewRectangleHitbox;
+          // Keeps its own size rather than filling its parent.
+          expect(rectangle.size, equals(flame.Vector2(10, 20)));
+          expect(rectangle.position, equals(flame.Vector2(1, 2)));
+          expect(rectangle.collisionType, equals(flame.CollisionType.passive));
+          expect(rectangle.isSolid, isTrue);
+          expect(circle, isA<PreviewCircleHitbox>());
+          // Keeps its own radius rather than filling its parent.
+          expect((circle as PreviewCircleHitbox).radius, equals(5));
+          expect(circle.collisionType, equals(flame.CollisionType.active));
+          expect(polygon, isA<PreviewPolygonHitbox>());
+          for (final hitbox in [rectangle, circle, polygon]) {
+            expect((hitbox as PreviewHitbox).isVisible, isTrue);
+          }
+        },
+      );
+
+      testWithGame(
+        'areHitboxesVisible hides the hitboxes, also after a rebuild',
+        () => ComponentPreviewGame(component: hitboxes),
+        (game) async {
+          await game.ready();
+
+          game.areHitboxesVisible = false;
+          expect(
+            game.preview.children.whereType<PreviewHitbox>().map(
+              (hitbox) => hitbox.isVisible,
+            ),
+            everyElement(isFalse),
+          );
+
+          game.show(hitboxes.removeNodeAt(const [0]));
+          await game.ready();
+          expect(
+            game.preview.children.whereType<PreviewHitbox>(),
+            everyElement(
+              isA<PreviewHitbox>().having(
+                (h) => h.isVisible,
+                'isVisible',
+                false,
+              ),
+            ),
+          );
+        },
+      );
+
+      testWithGame(
+        'starts with the hitboxes hidden',
+        () => ComponentPreviewGame(
+          component: hitboxes,
+          areHitboxesVisible: false,
+        ),
+        (game) async {
+          await game.ready();
+
+          expect(game.areHitboxesVisible, isFalse);
+          expect(
+            game.preview.children.whereType<PreviewHitbox>().map(
+              (hitbox) => hitbox.isVisible,
+            ),
+            everyElement(isFalse),
+          );
+        },
+      );
+    });
 
     group('with children', () {
       const child = RectangleComponent(
@@ -481,6 +580,43 @@ void main() {
       PreviewPositionComponent().render(canvas);
 
       verifyNever(() => canvas.drawLine(any(), any(), any()));
+    });
+  });
+
+  group('preview hitboxes', () {
+    test('rectangle hitboxes draw a dashed outline around their size', () {
+      final canvas = _MockCanvas();
+      PreviewRectangleHitbox()
+        ..size.setValues(16, 8)
+        ..render(canvas);
+
+      verify(() => canvas.drawLine(any(), any(), PreviewHitbox.paint))
+          .called(6);
+    });
+
+    test('circle hitboxes draw a dashed circle', () {
+      final canvas = _MockCanvas();
+      // A circumference of 16 pi (about 50) holds six 4px dashes and gaps.
+      PreviewCircleHitbox()
+        ..radius = 8
+        ..render(canvas);
+
+      verify(
+        () => canvas.drawArc(any(), any(), any(), false, PreviewHitbox.paint),
+      ).called(6);
+    });
+
+    test('polygon hitboxes draw a dashed outline along their vertices', () {
+      final canvas = _MockCanvas();
+      // Edges of 4, 4 and about 5.7 hold one 4px dash each.
+      PreviewPolygonHitbox([
+        flame.Vector2.zero(),
+        flame.Vector2(4, 0),
+        flame.Vector2(0, 4),
+      ]).render(canvas);
+
+      verify(() => canvas.drawLine(any(), any(), PreviewHitbox.paint))
+          .called(3);
     });
   });
 

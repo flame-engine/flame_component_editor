@@ -169,10 +169,29 @@ final class ComponentEditorPaletteChanged extends ComponentEditorEvent {
   List<Object> get props => [palette];
 }
 
+/// The user edited the collision of the selected [HitboxComponent].
+final class ComponentEditorCollisionChanged extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorCollisionChanged] event.
+  const new(this.collision);
+
+  /// The new collision.
+  final ComponentCollision collision;
+
+  @override
+  List<Object> get props => [collision];
+}
+
 /// The user toggled the highlight of the selected node in the preview.
 final class ComponentEditorSelectionHighlightToggled
     extends ComponentEditorEvent {
   /// Creates a [ComponentEditorSelectionHighlightToggled] event.
+  const new();
+}
+
+/// The user toggled the outlines of the hitboxes in the preview.
+final class ComponentEditorHitboxesVisibilityToggled
+    extends ComponentEditorEvent {
+  /// Creates a [ComponentEditorHitboxesVisibilityToggled] event.
   const new();
 }
 

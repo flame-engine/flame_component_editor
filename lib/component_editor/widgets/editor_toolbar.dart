@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// {@template editor_toolbar}
 /// The bar above the preview, with the preview options: the selection
-/// highlight and the zoom.
+/// highlight, the hitboxes outlines and the zoom.
 /// {@endtemplate}
 class EditorToolbar extends StatelessWidget {
   /// {@macro editor_toolbar}
@@ -20,43 +20,94 @@ class EditorToolbar extends StatelessWidget {
     final isSelectionHighlighted = context.select<ComponentEditorBloc, bool>(
       (bloc) => bloc.state.isSelectionHighlighted,
     );
+    final areHitboxesVisible = context.select<ComponentEditorBloc, bool>(
+      (bloc) => bloc.state.areHitboxesVisible,
+    );
+    final bloc = context.read<ComponentEditorBloc>();
     final colorScheme = Theme.of(context).colorScheme;
     return ColoredBox(
       color: colorScheme.surfaceContainer,
       child: SizedBox(
         height: height,
-        child: Row(
-          children: [
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: 'Highlight selection',
-              iconSize: 20,
-              isSelected: isSelectionHighlighted,
-              icon: const Icon(Icons.highlight_alt),
-              // Selected toggles get a filled background, so it's clear at
-              // a glance whether the highlight is on.
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? colorScheme.primaryContainer
-                      : null,
+        // Scrolls rather than overflows when the preview is narrow.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        _ToolbarToggle(
+                          tooltip: 'Highlight selection',
+                          icon: Icons.highlight_alt,
+                          isSelected: isSelectionHighlighted,
+                          onPressed: () => bloc.add(
+                            const ComponentEditorSelectionHighlightToggled(),
+                          ),
+                        ),
+                        _ToolbarToggle(
+                          tooltip: 'Show hitboxes',
+                          icon: Icons.border_style,
+                          isSelected: areHitboxesVisible,
+                          onPressed: () => bloc.add(
+                            const ComponentEditorHitboxesVisibilityToggled(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const _EditorZoomControls(),
+                  ],
                 ),
-                foregroundColor: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.selected)
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-              onPressed: () => context.read<ComponentEditorBloc>().add(
-                const ComponentEditorSelectionHighlightToggled(),
               ),
             ),
-            const Spacer(),
-            const _EditorZoomControls(),
-            const SizedBox(width: 8),
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _ToolbarToggle extends StatelessWidget {
+  const new({
+    required this.tooltip,
+    required this.icon,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: tooltip,
+      iconSize: 20,
+      isSelected: isSelected,
+      icon: Icon(icon),
+      // Selected toggles get a filled background, so it's clear at a glance
+      // whether they are on.
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? colorScheme.primaryContainer
+              : null,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurfaceVariant,
+        ),
+      ),
+      onPressed: onPressed,
     );
   }
 }

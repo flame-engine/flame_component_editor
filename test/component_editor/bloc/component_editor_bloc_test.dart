@@ -201,6 +201,61 @@ void main() {
       ],
     );
 
+    group('ComponentEditorCollisionChanged', () {
+      const collision = ComponentCollision(isSolid: true);
+      const hitbox = CircleHitboxComponent(name: 'Player');
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'updates the collision of a hitbox',
+        build: () => ComponentEditorBloc(
+          project: project,
+          component: hitbox,
+          componentRepository: componentRepository,
+          projectRepository: projectRepository,
+          editorPreferencesRepository: editorPreferencesRepository,
+        ),
+        act: (bloc) =>
+            bloc.add(const ComponentEditorCollisionChanged(collision)),
+        expect: () => const [
+          ComponentEditorState(
+            component: CircleHitboxComponent(
+              name: 'Player',
+              collision: collision,
+            ),
+            savedComponent: hitbox,
+          ),
+        ],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ignores components that are not hitboxes',
+        build: buildBloc,
+        act: (bloc) =>
+            bloc.add(const ComponentEditorCollisionChanged(collision)),
+        expect: () => const <ComponentEditorState>[],
+      );
+    });
+
+    test('shows the hitboxes by default', () {
+      expect(buildBloc().state.areHitboxesVisible, isTrue);
+    });
+
+    blocTest<ComponentEditorBloc, ComponentEditorState>(
+      'ComponentEditorHitboxesVisibilityToggled toggles the hitboxes',
+      build: buildBloc,
+      act: (bloc) => bloc
+        ..add(const ComponentEditorHitboxesVisibilityToggled())
+        ..add(const ComponentEditorHitboxesVisibilityToggled()),
+      expect: () => const [
+        ComponentEditorState(
+          component: component,
+          savedComponent: component,
+          areHitboxesVisible: false,
+        ),
+        ComponentEditorState(component: component, savedComponent: component),
+      ],
+    );
+
     test('highlights the selection by default', () {
       expect(buildBloc().state.isSelectionHighlighted, isTrue);
     });
@@ -644,6 +699,22 @@ void main() {
         build: buildBloc,
         seed: () => treeState,
         act: (bloc) => bloc.add(const ComponentEditorNodeSelected([3])),
+        expect: () => const <ComponentEditorState>[],
+      );
+
+      blocTest<ComponentEditorBloc, ComponentEditorState>(
+        'ComponentEditorChildAdded adds no child to a hitbox',
+        build: buildBloc,
+        seed: () => const ComponentEditorState(
+          component: RectangleComponent(
+            name: 'Player',
+            children: [RectangleHitboxComponent(name: 'rectangleHitbox1')],
+          ),
+          savedComponent: tree,
+          selectedPath: [0],
+        ),
+        act: (bloc) =>
+            bloc.add(const ComponentEditorChildAdded(ComponentType.rectangle)),
         expect: () => const <ComponentEditorState>[],
       );
 

@@ -213,6 +213,60 @@ void main() {
           .called(1);
     });
 
+    group('hitboxes toggle', () {
+      IconButton toggle(WidgetTester tester) => tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.border_style),
+          matching: find.byType(IconButton),
+        ),
+      );
+
+      testWidgets('is selected while the hitboxes are shown', (tester) async {
+        await tester.pumpApp(buildSubject());
+
+        expect(toggle(tester).isSelected, isTrue);
+      });
+
+      testWidgets('dispatches hitboxes toggles', (tester) async {
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('Show hitboxes'));
+
+        verify(() => bloc.add(const ComponentEditorHitboxesVisibilityToggled()))
+            .called(1);
+      });
+
+      testWidgets('preview outlines the hitboxes while shown', (tester) async {
+        const withHitbox = PositionComponent(
+          name: 'Player',
+          children: [RectangleHitboxComponent(name: 'rectangleHitbox1')],
+        );
+        const state = ComponentEditorState(
+          component: withHitbox,
+          savedComponent: withHitbox,
+        );
+        final states = StreamController<ComponentEditorState>();
+        whenListen(bloc, states.stream, initialState: state);
+        await tester.pumpApp(buildSubject());
+        await tester.pump();
+        final game = tester
+            .widget<GameWidget<ComponentPreviewGame>>(
+              find.byType(GameWidget<ComponentPreviewGame>),
+            )
+            .game!;
+        PreviewHitbox hitbox() =>
+            game.preview.children.whereType<PreviewHitbox>().single;
+        expect(hitbox().isVisible, isTrue);
+
+        states.add(state.copyWith(areHitboxesVisible: false));
+        await tester.pump();
+
+        expect(game.areHitboxesVisible, isFalse);
+        expect(hitbox().isVisible, isFalse);
+        await states.close();
+      });
+    });
+
     testWidgets('preview highlights the selection while enabled', (
       tester,
     ) async {
@@ -468,6 +522,79 @@ void main() {
             const ComponentEditorChildAdded(
               ComponentType.polygon,
               polygonShape: PolygonShape.square,
+            ),
+          ),
+        ).called(1);
+      });
+
+      testWidgets('adds hitboxes, with the picked shape for polygons', (
+        tester,
+      ) async {
+        stubTree();
+        await tester.pumpApp(buildSubject());
+
+        await tester.tap(find.byTooltip('Add child'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.text('Rectangle hitbox'), findsOneWidget);
+        expect(find.text('Circle hitbox'), findsOneWidget);
+        expect(find.text('Polygon hitbox (triangle)'), findsOneWidget);
+        await tester.tap(find.text('Polygon hitbox (square)'));
+
+        verify(
+          () => bloc.add(
+            const ComponentEditorChildAdded(
+              ComponentType.polygonHitbox,
+              polygonShape: PolygonShape.square,
+            ),
+          ),
+        ).called(1);
+      });
+
+      testWidgets('edits the collision of a hitbox, which has no paint and '
+          'no children', (tester) async {
+        const withHitbox = PositionComponent(
+          name: 'Player',
+          children: [CircleHitboxComponent(name: 'circleHitbox1')],
+        );
+        when(() => bloc.state).thenReturn(
+          const ComponentEditorState(
+            component: withHitbox,
+            savedComponent: withHitbox,
+            selectedPath: [0],
+          ),
+        );
+        await tester.pumpApp(buildSubject());
+
+        expect(
+          tester
+              .widget<PopupMenuButton<ComponentEditorChildAdded>>(
+                find.byType(PopupMenuButton<ComponentEditorChildAdded>),
+              )
+              .enabled,
+          isFalse,
+        );
+
+        await tester.scrollUntilVisible(
+          find.byType(CollisionEditor),
+          100,
+          scrollable: find
+              .descendant(
+                of: find.byType(PropertiesPanel),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(find.byType(RadiusEditor), findsOneWidget);
+        expect(find.byType(PaintEditor), findsNothing);
+        tester
+            .widget<CollisionEditor>(find.byType(CollisionEditor))
+            .onChanged(const ComponentCollision(isSolid: true));
+
+        verify(
+          () => bloc.add(
+            const ComponentEditorCollisionChanged(
+              ComponentCollision(isSolid: true),
             ),
           ),
         ).called(1);

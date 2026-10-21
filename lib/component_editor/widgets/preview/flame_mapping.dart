@@ -1,5 +1,7 @@
 import 'package:component_repository/component_repository.dart';
+import 'package:flame/collisions.dart' as flame;
 import 'package:flame/components.dart' as flame;
+import 'package:flame_component_editor/component_editor/widgets/preview/preview_hitboxes.dart';
 import 'package:flame_component_editor/component_editor/widgets/preview/preview_position_component.dart';
 import 'package:flutter/painting.dart';
 
@@ -28,18 +30,28 @@ flame.PositionComponent _build(Component component) {
   final target = switch (component) {
     RectangleComponent() => flame.RectangleComponent(),
     CircleComponent() => flame.CircleComponent(),
-    // Flame changes the list it is given, so it gets a new one.
-    PolygonComponent(:final vertices) => flame.PolygonComponent([
-      for (final vertex in vertices.vertices) flame.Vector2(vertex.x, vertex.y),
-    ]),
+    PolygonComponent(:final vertices) => flame.PolygonComponent(
+      _vectors(vertices),
+    ),
     // Outlined, since a plain PositionComponent would be invisible.
     PositionComponent() => PreviewPositionComponent(),
+    // Hitboxes draw nothing either, so they are outlined too.
+    RectangleHitboxComponent() => PreviewRectangleHitbox(),
+    CircleHitboxComponent() => PreviewCircleHitbox(),
+    PolygonHitboxComponent(:final vertices) => PreviewPolygonHitbox(
+      _vectors(vertices),
+    ),
   };
   applyProperties(target, component);
   // Children added before mounting are stored right away, in order.
   component.children.map(_build).forEach(target.add);
   return target;
 }
+
+/// A new list of the [vertices], since Flame changes the list it is given.
+List<flame.Vector2> _vectors(ComponentVertices vertices) => [
+  for (final vertex in vertices.vertices) flame.Vector2(vertex.x, vertex.y),
+];
 
 /// Whether [a] and [b] have the same types arranged in the same tree, so
 /// that the Flame components built for [a] can be updated to show [b].
@@ -124,6 +136,10 @@ T applyProperties<T extends flame.PositionComponent>(
       when target is flame.HasPaint) {
     applyPaint(target as flame.HasPaint, painted.paint);
   }
+  if (component case final HitboxComponent hitbox
+      when target is flame.ShapeHitbox) {
+    applyCollision(target as flame.ShapeHitbox, hitbox.collision);
+  }
   return target;
 }
 
@@ -160,4 +176,15 @@ void applyPaint(flame.HasPaint target, ComponentPaint paint) {
       PaintStyle.fill => PaintingStyle.fill,
       PaintStyle.stroke => PaintingStyle.stroke,
     };
+}
+
+/// Applies [collision] to [target].
+void applyCollision(flame.ShapeHitbox target, ComponentCollision collision) {
+  target
+    ..collisionType = switch (collision.type) {
+      HitboxCollisionType.active => flame.CollisionType.active,
+      HitboxCollisionType.passive => flame.CollisionType.passive,
+      HitboxCollisionType.inactive => flame.CollisionType.inactive,
+    }
+    ..isSolid = collision.isSolid;
 }

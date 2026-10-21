@@ -2,23 +2,31 @@ import 'package:component_repository/component_repository.dart';
 import 'package:flame/components.dart' as flame;
 import 'package:flame/game.dart';
 import 'package:flame_component_editor/component_editor/widgets/preview/flame_mapping.dart';
+import 'package:flame_component_editor/component_editor/widgets/preview/preview_hitboxes.dart';
 import 'package:flame_component_editor/component_editor/widgets/preview/selection_highlight.dart';
 import 'package:flutter/painting.dart';
 
 /// {@template component_preview_game}
 /// A Flame game that renders a [Component] and its children, centered on
-/// screen and scaled by [zoom], and highlights one of them.
+/// screen and scaled by [zoom], and highlights one of them. Hitboxes are
+/// outlined while [areHitboxesVisible].
 ///
 /// The game only renders: the component being edited is owned by the
 /// `ComponentEditorBloc` and pushed here with [show].
 /// {@endtemplate}
 class ComponentPreviewGame extends FlameGame {
   /// {@macro component_preview_game}
-  new({required this._component, this._highlightedPath, this._zoom = 1});
+  new({
+    required this._component,
+    this._highlightedPath,
+    this._zoom = 1,
+    this._areHitboxesVisible = true,
+  });
 
   Component _component;
   List<int>? _highlightedPath;
   double _zoom;
+  bool _areHitboxesVisible;
   late flame.PositionComponent _preview;
 
   /// The Flame component currently rendering the previewed root
@@ -34,6 +42,13 @@ class ComponentPreviewGame extends FlameGame {
   set zoom(double value) {
     _zoom = value;
     if (isLoaded) _applyZoom();
+  }
+
+  /// Whether the hitboxes are outlined (see [PreviewHitbox]).
+  bool get areHitboxesVisible => _areHitboxesVisible;
+  set areHitboxesVisible(bool value) {
+    _areHitboxesVisible = value;
+    if (isLoaded) _applyHitboxesVisibility();
   }
 
   @override
@@ -77,7 +92,15 @@ class ComponentPreviewGame extends FlameGame {
     if (isLoaded) _preview.removeFromParent();
     _preview = buildFlameComponent(_component);
     world.add(_preview);
+    _applyHitboxesVisibility();
     _updateHighlight();
+  }
+
+  void _applyHitboxesVisibility() {
+    for (final hitbox
+        in _preview.descendants(includeSelf: true).whereType<PreviewHitbox>()) {
+      hitbox.isVisible = _areHitboxesVisible;
+    }
   }
 
   void _updateHighlight() {

@@ -1,5 +1,6 @@
 import 'package:component_repository/component_repository.dart';
 import 'package:flame_component_editor/component_editor/bloc/component_editor_bloc.dart';
+import 'package:flame_component_editor/component_editor/widgets/preview/preview_hitboxes.dart';
 import 'package:flame_component_editor/component_editor/widgets/property_editors/property_editors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -86,6 +87,11 @@ class PropertiesPanel extends StatelessWidget {
               PaintedComponent(:final paint) => paint.copyWith(
                 color: paint.resolvedColor(palette),
               ),
+              // Drawn like in the preview.
+              HitboxComponent() => ComponentPaint(
+                color: PreviewHitbox.color.toARGB32(),
+                style: PaintStyle.stroke,
+              ),
               _ => const ComponentPaint(),
             },
             onChanged: (vertices) =>
@@ -96,6 +102,12 @@ class PropertiesPanel extends StatelessWidget {
             value: painted.paint,
             palette: palette,
             onChanged: (paint) => bloc.add(ComponentEditorPaintChanged(paint)),
+          ),
+        if (component case final HitboxComponent hitbox)
+          CollisionEditor(
+            value: hitbox.collision,
+            onChanged: (collision) =>
+                bloc.add(ComponentEditorCollisionChanged(collision)),
           ),
       ],
     );

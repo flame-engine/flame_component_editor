@@ -13,7 +13,16 @@ enum ComponentType {
   circle(key: 'circle', label: 'Circle'),
 
   /// A polygon, backed by Flame's `PolygonComponent`.
-  polygon(key: 'polygon', label: 'Polygon');
+  polygon(key: 'polygon', label: 'Polygon'),
+
+  /// A rectangular hitbox, backed by Flame's `RectangleHitbox`.
+  rectangleHitbox(key: 'rectangleHitbox', label: 'Rectangle hitbox'),
+
+  /// A round hitbox, backed by Flame's `CircleHitbox`.
+  circleHitbox(key: 'circleHitbox', label: 'Circle hitbox'),
+
+  /// A polygonal hitbox, backed by Flame's `PolygonHitbox`.
+  polygonHitbox(key: 'polygonHitbox', label: 'Polygon hitbox');
 
   new({required this.key, required this.label});
 
@@ -30,4 +39,15 @@ enum ComponentType {
 
   /// Human readable name.
   final String label;
+
+  /// Whether components of this type are hitboxes, which can only be
+  /// children and have no children of their own (see `HitboxComponent`).
+  bool get isHitbox => switch (this) {
+    rectangleHitbox || circleHitbox || polygonHitbox => true,
+    rectangle || position || circle || polygon => false,
+  };
+
+  /// Whether components of this type are shaped by vertices, and start
+  /// with a `PolygonShape`.
+  bool get hasVertices => this == polygon || this == polygonHitbox;
 }

@@ -8,7 +8,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// {@template component_preview}
 /// Renders the component being edited with Flame, at
 /// [ComponentEditorState.zoom], highlighting the selected node unless
-/// [ComponentEditorState.isSelectionHighlighted] is off.
+/// [ComponentEditorState.isSelectionHighlighted] is off, and outlining the
+/// hitboxes unless [ComponentEditorState.areHitboxesVisible] is off.
 ///
 /// Paints that use palette colors are drawn with their current value in
 /// [ComponentEditorState.palette].
@@ -31,6 +32,7 @@ class _ComponentPreviewState extends State<ComponentPreview> {
       component: _previewed(state),
       highlightedPath: _highlightedPath(state),
       zoom: state.zoom,
+      areHitboxesVisible: state.areHitboxesVisible,
     );
   }
 
@@ -47,6 +49,12 @@ class _ComponentPreviewState extends State<ComponentPreview> {
         BlocListener<ComponentEditorBloc, ComponentEditorState>(
           listenWhen: (previous, current) => previous.zoom != current.zoom,
           listener: (context, state) => _game.zoom = state.zoom,
+        ),
+        BlocListener<ComponentEditorBloc, ComponentEditorState>(
+          listenWhen: (previous, current) =>
+              previous.areHitboxesVisible != current.areHitboxesVisible,
+          listener: (context, state) =>
+              _game.areHitboxesVisible = state.areHitboxesVisible,
         ),
         BlocListener<ComponentEditorBloc, ComponentEditorState>(
           listenWhen: (previous, current) =>
