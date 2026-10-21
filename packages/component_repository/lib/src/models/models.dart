@@ -2,6 +2,7 @@ export 'component.dart';
 export 'component_anchor.dart';
 export 'component_angle.dart';
 export 'component_capabilities.dart';
+export 'component_collision.dart';
 export 'component_paint.dart';
 export 'component_position.dart';
 export 'component_radius.dart';

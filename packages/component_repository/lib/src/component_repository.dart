@@ -133,12 +133,18 @@ class ComponentRepository {
   /// `PlayerShip`), already exists. Throws a
   /// [ComponentClassConflictException] if another component already
   /// generates its class (see [ComponentTree.generatedClassNames]).
+  ///
+  /// Hitboxes ([ComponentType.isHitbox]) can only be children, so [type]
+  /// can't be one: that throws an [ArgumentError].
   Future<Component> createComponent(
     String projectPath,
     String name,
     ComponentType type, {
     PolygonShape polygonShape = PolygonShape.triangle,
   }) async {
+    if (type.isHitbox) {
+      throw ArgumentError.value(type, 'type', 'Hitboxes can only be children');
+    }
     final className = dartClassName(name);
     final fileName = dartFileName(name);
     if (!_validName.hasMatch(name) ||

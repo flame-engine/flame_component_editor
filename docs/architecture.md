@@ -131,10 +131,10 @@ dependencies:
 | Data | `packages/file_system_client` | Native directory picker (`file_selector`), directory/file existence, list/read/write/delete files |
 | Repository | `packages/editor_preferences_repository` | App-wide editor preferences (`shared_preferences`, through `key_value_storage_client`), not stored in the project: the preview zoom of each component, keyed by project path + component name (`component_zoom:<projectPath>:<componentName>`), clamped to `minZoom`–`maxZoom`; the `ZoomLevels` the editor canvases step through |
 | Repository | `packages/project_repository` | `Project` and `ProjectSettings` models; pick/open projects; last 10 recent projects; read/write project settings (`<project>/.flame_editor/settings.json`) and pick a project-relative output folder |
-| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`, `ComponentVertices`…), the `PolygonShape` presets new polygons start with, capability interfaces and the `ComponentTree` extension for nested children (including child name validation); list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`); `ComponentCodeGenerator` and writing/deleting the generated Dart code (see "Code generation"); the project's `Palette` (`<project>/.flame_editor/palette.json`) and its `PaletteCodeGenerator` (see "Palette") |
+| Repository | `packages/component_repository` | Sealed `Component` model (one subclass per `ComponentType`), shared property models (`ComponentPosition`, `ComponentSize`, `ComponentPaint`, `ComponentVertices`…), the `PolygonShape` presets new polygons start with, the hitbox types and their `ComponentCollision`, capability interfaces and the `ComponentTree` extension for nested children (including child name validation); list/create/save/delete a project's components (one JSON file each in `<project>/.flame_editor/components/`); `ComponentCodeGenerator` and writing/deleting the generated Dart code (see "Code generation"); the project's `Palette` (`<project>/.flame_editor/palette.json`) and its `PaletteCodeGenerator` (see "Palette") |
 | Bloc + view | `lib/home/` | Landing screen: "Open project" button and recent projects list |
 | Bloc + view | `lib/project/` | Project dashboard: lists components, add (name + type dialog → editor), edit, delete (with confirmation; also deletes the generated code), settings icon (opens the settings dialog). Pushed from home with `ProjectPage.route` |
-| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: a top bar (`EditorTopBar`, below the app bar, above the three panels) for project-wide actions (the palette button), component tree (left, add/remove children, root selected by default), Flame preview (center, magenta border around the selected node; a toolbar above it toggles that highlight and has the zoom controls), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
+| Bloc + view | `lib/component_editor/` | Component editor, `ComponentEditorPage.route(project, component)`: a top bar (`EditorTopBar`, below the app bar, above the three panels) for project-wide actions (the palette button), component tree (left, add/remove children — not under hitboxes —, root selected by default), Flame preview (center, magenta border around the selected node; a toolbar above it toggles that highlight and the hitbox outlines, and has the zoom controls; it scrolls horizontally when the preview is narrow), properties panel for the selected node (right; children also get a Name field), save button + Cmd/Ctrl+S (also generates the Dart code), unsaved-changes marker in the title, `PopScope` prompt (cancel / discard / save) when leaving with unsaved changes |
 | Bloc + view | `lib/vertices_editor/` | Vertices editor dialog, `VerticesEditorDialog.show(context, vertices:, paint:)`: a `CustomPaint` canvas (`VerticesCanvas`, `VerticesPainter`) where the user drags vertices, adds one from the "+" handle in the middle of an edge, and deletes the selected one (Delete/Backspace, context menu or button; at least 3 are kept). A side bar (`VerticesList`) has X/Y fields per vertex to type exact coordinates, and a delete button per row; selecting a row or focusing its fields selects the vertex. `VerticesEditorCubit` edits a working copy; Apply returns it normalized, Cancel/Esc returns `null`. `VerticesViewTransform` maps local coordinates to the canvas (fitted once when the dialog opens) and does the hit testing. The canvas zooms (`ZoomControls` next to the title, Cmd/Ctrl + `=`/`-`/`0`) relative to that fit, around its center (`VerticesViewTransform.zoomed`); the zoom is held by the cubit and not remembered |
 | Bloc + view | `lib/palette/` | Palette dialog, `PaletteDialog.show(context, project:, component:)` (opened from the editor's top bar; returns the saved `Palette` or `null`): add, rename, change and remove named colors; colors used by a component (including the unsaved edits of the open one) can't be renamed or removed. `PaletteBloc` saves the palette and generates its code |
 | Bloc + view | `lib/project_settings/` | Project settings dialog, `ProjectSettingsDialog.show(context, project)`: output path for generated Dart code (default `lib/components`, text field + Browse) |
@@ -154,13 +154,13 @@ component types only declare which ones they have:
 
 | Piece | Where | Example |
 | --- | --- | --- |
-| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentAnchor`, `ComponentAngle`, `ComponentSize`, `ComponentRadius`, `ComponentVertices`, `ComponentPaint` |
-| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `AnchoredComponent`, `RotatedComponent`, `SizedComponent`, `RadiusComponent`, `VerticesComponent`, `PaintedComponent` |
-| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, SizedComponent`, `CircleComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, RadiusComponent, PaintedComponent`, `PolygonComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, VerticesComponent, PaintedComponent` |
+| Value object (Equatable, JSON, defaults) | `component_repository/lib/src/models/` | `ComponentPosition`, `ComponentAnchor`, `ComponentAngle`, `ComponentSize`, `ComponentRadius`, `ComponentVertices`, `ComponentPaint`, `ComponentCollision` |
+| Capability interface | `component_repository/lib/src/models/component_capabilities.dart` | `PositionedComponent`, `AnchoredComponent`, `RotatedComponent`, `SizedComponent`, `RadiusComponent`, `VerticesComponent`, `PaintedComponent`, `HitboxComponent` |
+| Component type | `ComponentType` enum + a subclass in `component.dart`'s library (`part` file) | `RectangleComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, SizedComponent, PaintedComponent`, `PositionComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, SizedComponent`, `CircleComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, RadiusComponent, PaintedComponent`, `PolygonComponent implements PositionedComponent, AnchoredComponent, RotatedComponent, VerticesComponent, PaintedComponent`, and the hitboxes, which swap the paint for a `HitboxComponent`: `RectangleHitboxComponent`, `CircleHitboxComponent`, `PolygonHitboxComponent` |
 | Bloc event | `lib/component_editor/bloc/` | `ComponentEditorSizeChanged` (edits the selected node if it is a `SizedComponent`) |
-| Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `PositionEditor`, `AnchorEditor`, `AngleEditor`, `SizeEditor`, `RadiusEditor`, `VerticesEditor` (a button that opens the vertices editor dialog), `PaintEditor`, built from `NumberField`, `ColorField`, `EnumField` |
+| Editor widget (`value` + `onChanged`, bloc-agnostic) | `lib/component_editor/widgets/property_editors/` | `PositionEditor`, `AnchorEditor`, `AngleEditor`, `SizeEditor`, `RadiusEditor`, `VerticesEditor` (a button that opens the vertices editor dialog), `PaintEditor`, `CollisionEditor`, built from `NumberField`, `ColorField`, `EnumField` |
 | Panel wiring | `lib/component_editor/widgets/properties_panel.dart` | `if (component case SizedComponent c) SizeEditor(...)` |
-| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applyAnchor`, `applyAngle`, `applySize`, `applyRadius`, `applyPaint`, `buildFlameComponent` |
+| Flame mapping | `lib/component_editor/widgets/preview/flame_mapping.dart` | `applyPosition`, `applyAnchor`, `applyAngle`, `applySize`, `applyRadius`, `applyPaint`, `applyCollision`, `buildFlameComponent` |
 | Code generation | `component_repository/lib/src/code_generation/` | `ComponentCodeGenerator._flameClass` / `_arguments`, `flameMemberNames` in `dart_names.dart` |
 
 **Adding a component type:** add a `ComponentType` value, a `Component`
@@ -199,6 +199,38 @@ rebuilds it. Flame also changes the list it is given, so the preview and
 the generated code always pass a new, non-const list, as the first
 (positional) constructor argument.
 
+### Hitboxes
+
+`RectangleHitboxComponent`, `CircleHitboxComponent` and
+`PolygonHitboxComponent` are Flame's `RectangleHitbox`, `CircleHitbox` and
+`PolygonHitbox`: the geometry of their shape (size, radius or vertices, so
+the shared editors, highlight and polygon rules apply) without a paint,
+plus a `ComponentCollision` (`HitboxComponent`): the collision type
+(`HitboxCollisionType`, mirroring Flame's `CollisionType`) and `isSolid`.
+The generated code imports `package:flame/collisions.dart` when the tree has
+a hitbox, and omits `collisionType`/`isSolid` at Flame's defaults (active,
+not solid).
+
+- **Children only, and leaves.** Flame throws when a hitbox has no
+  `PositionComponent` ancestor, so `createComponent` rejects hitbox roots
+  (`ArgumentError`) and the add component dialog doesn't offer them;
+  `addChildAt` throws under a hitbox, the editor bloc ignores
+  `ComponentEditorChildAdded` while one is selected and the tree's add
+  button is disabled.
+- **Preview.** Hitboxes draw nothing, so the preview builds
+  `PreviewRectangleHitbox`, `PreviewCircleHitbox` and `PreviewPolygonHitbox`
+  (`preview_hitboxes.dart`, sharing the `PreviewHitbox` mixin): the real
+  Flame hitboxes with an **orange dashed outline**. The preview game has no
+  collision detection, so they never collide. The toolbar's "Show
+  hitboxes" toggle (`ComponentEditorState.areHitboxesVisible`, on by
+  default, not persisted) hides them through Flame's `HasVisibility`
+  (`ComponentPreviewGame.areHitboxesVisible`). The vertices editor draws
+  polygon hitboxes with the same orange stroke.
+- **Fill-parent gotcha.** Flame's `RectangleHitbox`/`CircleHitbox` fill
+  their parent when built without a size/radius and without a position.
+  The preview hitboxes are built with a zero size/radius, and the
+  generated children always pass a position and a size/radius.
+
 ### Component tree
 
 Like in Flame, every `Component` has `children` (stored nested in the same
@@ -223,7 +255,9 @@ updates the Flame components in place while the tree shape is unchanged
 Position components draw nothing in Flame, so the preview builds them as
 `PreviewPositionComponent`, a `PositionComponent` with a faint dashed
 outline, to keep them visible while unselected. The outline is preview
-only: the generated code uses a plain `PositionComponent`.
+only: the generated code uses a plain `PositionComponent`. The dashes are
+drawn by the shared helpers in `dashed_outline.dart`, also used by the
+hitboxes.
 
 The preview highlights the selected node with a magenta border while
 `isSelectionHighlighted` is on (the toolbar toggle; on by default, not

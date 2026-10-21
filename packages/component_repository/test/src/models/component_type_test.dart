@@ -11,6 +11,36 @@ void main() {
       expect(ComponentType.fromKey('position'), equals(ComponentType.position));
       expect(ComponentType.fromKey('circle'), equals(ComponentType.circle));
       expect(ComponentType.fromKey('polygon'), equals(ComponentType.polygon));
+      expect(
+        ComponentType.fromKey('rectangleHitbox'),
+        equals(ComponentType.rectangleHitbox),
+      );
+      expect(
+        ComponentType.fromKey('circleHitbox'),
+        equals(ComponentType.circleHitbox),
+      );
+      expect(
+        ComponentType.fromKey('polygonHitbox'),
+        equals(ComponentType.polygonHitbox),
+      );
+    });
+
+    test('isHitbox is true only for hitboxes', () {
+      expect(
+        ComponentType.values.where((type) => type.isHitbox),
+        equals([
+          ComponentType.rectangleHitbox,
+          ComponentType.circleHitbox,
+          ComponentType.polygonHitbox,
+        ]),
+      );
+    });
+
+    test('hasVertices is true for polygons and polygon hitboxes', () {
+      expect(
+        ComponentType.values.where((type) => type.hasVertices),
+        equals([ComponentType.polygon, ComponentType.polygonHitbox]),
+      );
     });
 
     test('fromKey returns null for unknown keys', () {

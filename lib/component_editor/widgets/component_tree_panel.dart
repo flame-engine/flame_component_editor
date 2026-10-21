@@ -9,7 +9,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// tree.
 ///
 /// Tapping a node selects it, so the properties panel edits it. New
-/// components are added inside the selected node.
+/// components are added inside the selected node, unless it is a hitbox,
+/// which can't have children.
 /// {@endtemplate}
 class ComponentTreePanel extends StatelessWidget {
   /// {@macro component_tree_panel}
@@ -40,10 +41,11 @@ class ComponentTreePanel extends StatelessWidget {
               PopupMenuButton<ComponentEditorChildAdded>(
                 tooltip: 'Add child',
                 icon: const Icon(Icons.add),
+                enabled: component.nodeAt(selectedPath) is! HitboxComponent,
                 onSelected: bloc.add,
                 itemBuilder: (_) => [
                   for (final type in ComponentType.values)
-                    if (type == ComponentType.polygon)
+                    if (type.hasVertices)
                       // One entry per shape a new polygon can start with.
                       for (final shape in PolygonShape.values)
                         PopupMenuItem(
@@ -109,6 +111,9 @@ class ComponentTreePanel extends StatelessWidget {
       ComponentType.position => Icons.crop_free,
       ComponentType.circle => Icons.circle_outlined,
       ComponentType.polygon => Icons.pentagon_outlined,
+      ComponentType.rectangleHitbox => Icons.select_all,
+      ComponentType.circleHitbox => Icons.track_changes,
+      ComponentType.polygonHitbox => Icons.hexagon_outlined,
     };
   }
 

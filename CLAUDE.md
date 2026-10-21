@@ -64,7 +64,8 @@ three pass.
   (a top bar below the app bar for project-wide actions — the palette
   button —, component tree on the left to add/remove/select/rename nested children,
   live Flame preview in the center, with a toolbar above it whose toggle
-  highlights the selected node with a magenta border and whose zoom
+  highlights the selected node with a magenta border, another toggle
+  shows/hides the hitbox outlines, and whose zoom
   controls (also Cmd/Ctrl + `=`/`-`/`0`) zoom the preview — the zoom is an
   app-wide preference per component, in `editor_preferences_repository`,
   never in the component's JSON —, properties of the selected node on the
@@ -87,7 +88,13 @@ three pass.
   itself, useful as a container) and `circle` (a Flame `CircleComponent`:
   position, anchor and angle — children only —, radius, and paint; the radius is its own
   `ComponentRadius` property, since Flame circles take a radius, not a
-  size). Components can have children
+  size) and the hitboxes `rectangleHitbox`, `circleHitbox` and
+  `polygonHitbox` (Flame's `RectangleHitbox`, `CircleHitbox` and
+  `PolygonHitbox`: their shape's geometry plus a `ComponentCollision` —
+  collision type and solid —, no paint; children only, never roots, and
+  with no children of their own; outlined in orange dashes in the preview,
+  shown/hidden by a toolbar toggle — see "Hitboxes" in
+  [docs/architecture.md](docs/architecture.md)). Components can have children
   (see "Component tree" in [docs/architecture.md](docs/architecture.md)). Properties are shared between types through capability interfaces —
   see "Component types & shared properties" in
   [docs/architecture.md](docs/architecture.md) before adding a type or

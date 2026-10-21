@@ -94,6 +94,18 @@ void main() {
         ).called(1);
       });
 
+      test('throws an ArgumentError for hitboxes', () async {
+        await expectLater(
+          repository.createComponent(
+            projectPath,
+            'Player',
+            ComponentType.rectangleHitbox,
+          ),
+          throwsArgumentError,
+        );
+        verifyNever(() => fileSystem.writeFile(any(), any()));
+      });
+
       test('creates polygons with the given shape', () async {
         when(() => fileSystem.listFiles(directory, extension: '.json'))
             .thenAnswer((_) async => []);

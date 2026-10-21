@@ -45,6 +45,7 @@ final class ComponentEditorState extends Equatable {
     this.takenClassNames = const {},
     this.isCodeOutdated = false,
     this.isSelectionHighlighted = true,
+    this.areHitboxesVisible = true,
     this.palette = const Palette(),
     this.zoom = EditorPreferencesRepository.defaultZoom,
   });
@@ -80,6 +81,10 @@ final class ComponentEditorState extends Equatable {
   /// Whether the preview highlights the selected node, when it has a size
   /// or a radius (see [SizedComponent] and [RadiusComponent]).
   final bool isSelectionHighlighted;
+
+  /// Whether the preview outlines the hitboxes ([HitboxComponent]), which
+  /// draw nothing themselves.
+  final bool areHitboxesVisible;
 
   /// The palette of the project, whose colors paints can use (see
   /// [ComponentPaint.paletteColor]).
@@ -140,6 +145,7 @@ final class ComponentEditorState extends Equatable {
     Map<String, Component>? takenClassNames,
     bool? isCodeOutdated,
     bool? isSelectionHighlighted,
+    bool? areHitboxesVisible,
     Palette? palette,
     double? zoom,
   }) {
@@ -152,6 +158,7 @@ final class ComponentEditorState extends Equatable {
       isCodeOutdated: isCodeOutdated ?? this.isCodeOutdated,
       isSelectionHighlighted:
           isSelectionHighlighted ?? this.isSelectionHighlighted,
+      areHitboxesVisible: areHitboxesVisible ?? this.areHitboxesVisible,
       palette: palette ?? this.palette,
       zoom: zoom ?? this.zoom,
     );
@@ -166,6 +173,7 @@ final class ComponentEditorState extends Equatable {
     takenClassNames,
     isCodeOutdated,
     isSelectionHighlighted,
+    areHitboxesVisible,
     palette,
     zoom,
   ];

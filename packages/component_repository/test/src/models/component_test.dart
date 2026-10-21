@@ -47,9 +47,48 @@ void main() {
           ),
         );
       });
+
+      test('creates hitboxes with default properties', () {
+        expect(
+          Component.create('hitbox', ComponentType.rectangleHitbox),
+          equals(const RectangleHitboxComponent(name: 'hitbox')),
+        );
+        expect(
+          Component.create('hitbox', ComponentType.circleHitbox),
+          equals(const CircleHitboxComponent(name: 'hitbox')),
+        );
+        expect(
+          Component.create(
+            'hitbox',
+            ComponentType.polygonHitbox,
+            polygonShape: PolygonShape.square,
+          ),
+          equals(
+            const PolygonHitboxComponent(
+              name: 'hitbox',
+              vertices: ComponentVertices(ComponentVertices.square),
+            ),
+          ),
+        );
+      });
     });
 
     group('fromJson', () {
+      test('reads hitboxes', () {
+        expect(
+          Component.fromJson(const {'name': 'a', 'type': 'rectangleHitbox'}),
+          equals(const RectangleHitboxComponent(name: 'a')),
+        );
+        expect(
+          Component.fromJson(const {'name': 'a', 'type': 'circleHitbox'}),
+          equals(const CircleHitboxComponent(name: 'a')),
+        );
+        expect(
+          Component.fromJson(const {'name': 'a', 'type': 'polygonHitbox'}),
+          equals(const PolygonHitboxComponent(name: 'a')),
+        );
+      });
+
       test('reads a polygon', () {
         expect(
           Component.fromJson(const {'name': 'Player', 'type': 'polygon'}),

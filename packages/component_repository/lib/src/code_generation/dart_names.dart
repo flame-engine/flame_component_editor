@@ -64,6 +64,11 @@ Set<String> flameMemberNames(ComponentType type) {
     ComponentType.position => _positionComponentMembers,
     ComponentType.circle => _circleComponentMembers,
     ComponentType.polygon => _polygonComponentMembers,
+    // Hitboxes have no children, so no getters: the members of their shape
+    // are enough.
+    ComponentType.rectangleHitbox => _rectangleComponentMembers,
+    ComponentType.circleHitbox => _circleComponentMembers,
+    ComponentType.polygonHitbox => _polygonComponentMembers,
   };
 }
 

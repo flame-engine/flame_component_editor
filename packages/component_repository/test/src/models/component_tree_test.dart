@@ -45,6 +45,20 @@ void main() {
       expect(updated.nodeAt(const [1]).children, equals([child]));
     });
 
+    test('addChildAt throws when the node is a hitbox', () {
+      const withHitbox = RectangleComponent(
+        name: 'Player',
+        children: [RectangleHitboxComponent(name: 'rectangleHitbox1')],
+      );
+
+      expect(
+        () => withHitbox.addChildAt(const [
+          0,
+        ], const RectangleComponent(name: 'rectangle1')),
+        throwsArgumentError,
+      );
+    });
+
     test('removeNodeAt removes the node and its children', () {
       final updated = tree.removeNodeAt(const [0]);
 

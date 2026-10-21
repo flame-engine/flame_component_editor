@@ -2,9 +2,12 @@ import 'package:component_repository/component_repository.dart';
 import 'package:equatable/equatable.dart';
 
 part 'circle_component.dart';
+part 'circle_hitbox_component.dart';
 part 'polygon_component.dart';
+part 'polygon_hitbox_component.dart';
 part 'position_component.dart';
 part 'rectangle_component.dart';
+part 'rectangle_hitbox_component.dart';
 
 /// {@template component}
 /// A Flame component definition that belongs to a project.
@@ -22,7 +25,8 @@ sealed class Component extends Equatable {
 
   /// Creates a component of [type] called [name] with default properties.
   ///
-  /// Polygons start with the vertices of [polygonShape].
+  /// Polygons and polygon hitboxes start with the vertices of
+  /// [polygonShape].
   factory create(
     String name,
     ComponentType type, {
@@ -33,6 +37,12 @@ sealed class Component extends Equatable {
       ComponentType.position => PositionComponent(name: name),
       ComponentType.circle => CircleComponent(name: name),
       ComponentType.polygon => PolygonComponent(
+        name: name,
+        vertices: ComponentVertices(polygonShape.vertices),
+      ),
+      ComponentType.rectangleHitbox => RectangleHitboxComponent(name: name),
+      ComponentType.circleHitbox => CircleHitboxComponent(name: name),
+      ComponentType.polygonHitbox => PolygonHitboxComponent(
         name: name,
         vertices: ComponentVertices(polygonShape.vertices),
       ),
@@ -51,6 +61,9 @@ sealed class Component extends Equatable {
       ComponentType.position => PositionComponent._fromJson(json),
       ComponentType.circle => CircleComponent._fromJson(json),
       ComponentType.polygon => PolygonComponent._fromJson(json),
+      ComponentType.rectangleHitbox => RectangleHitboxComponent._fromJson(json),
+      ComponentType.circleHitbox => CircleHitboxComponent._fromJson(json),
+      ComponentType.polygonHitbox => PolygonHitboxComponent._fromJson(json),
     };
     return component.copyWithChildren(_childrenFromJson(json['children']));
   }

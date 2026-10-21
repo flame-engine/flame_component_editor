@@ -64,7 +64,13 @@ extension ComponentTree on Component {
 
   /// Returns a copy of this tree with [child] added as the last child of the
   /// node at [path].
+  ///
+  /// Hitboxes ([HitboxComponent]) can't have children, and can't be added
+  /// to another hitbox.
   Component addChildAt(List<int> path, Component child) {
+    if (nodeAt(path) is HitboxComponent) {
+      throw ArgumentError.value(path, 'path', 'Hitboxes cannot have children');
+    }
     return updateNodeAt(
       path,
       (node) => node.copyWithChildren([...node.children, child]),
