@@ -26,7 +26,7 @@ jobs:
       runs_on: ubuntu-24.04
 
   build:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v2
     with:
       flutter_channel: stable
       min_coverage: 50
@@ -34,7 +34,7 @@ jobs:
       runs_on: ubuntu-24.04
 
   key-value-storage-client:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v2
     with:
       flutter_channel: stable
       working_directory: packages/key_value_storage_client
@@ -42,7 +42,7 @@ jobs:
       runs_on: ubuntu-24.04
 
   file-system-client:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v2
     with:
       flutter_channel: stable
       working_directory: packages/file_system_client
@@ -50,7 +50,7 @@ jobs:
       runs_on: ubuntu-24.04
 
   project-repository:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v2
     with:
       flutter_channel: stable
       working_directory: packages/project_repository
@@ -58,7 +58,7 @@ jobs:
       runs_on: ubuntu-24.04
 
   editor-preferences-repository:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v2
     with:
       flutter_channel: stable
       working_directory: packages/editor_preferences_repository
@@ -66,7 +66,7 @@ jobs:
       runs_on: ubuntu-24.04
 
   component-repository:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v2
     with:
       flutter_channel: stable
       working_directory: packages/component_repository
